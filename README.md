@@ -2,7 +2,7 @@
 
 **Open Source Feed Loading Assistant powered by Computer Vision**
 
-AgLoadMonitor is an open-source solution designed to digitize and simplify the feeding process on the farm. By using a Raspberry Pi and a custom-trained **YOLO (Ultralytics)** model, this system reads the weight display of your feed mixer or block wagon via a standard WiFi camera and streams the data directly to your smartphone or tablet.
+AgLoadMonitor is an open-source solution designed to digitize and simplify the feeding process on the farm. By using a Raspberry Pi and a custom-trained **YOLO (Ultralytics)** model, this system reads the weight display of your feed mixer or block wagon via a standard ip-camera and streams the data directly to your smartphone or tablet.
 
 No expensive proprietary hardware upgrades needed—just smart software and off-the-shelf components.
 
@@ -31,7 +31,7 @@ No expensive proprietary hardware upgrades needed—just smart software and off-
 
 1.  **Compute:** Raspberry Pi 4 (or 5) acting as the local web server and CV processor.
     * *Power:* Connected to the tractor's 12V ignition (boots on start).
-2.  **Vision:** Standard WiFi IP Camera.
+2.  **Vision:** Standard IP Camera.
     * *Mounting:* Directed at the weighing monitor.
     * *Optional:* Secondary camera inside the mixing tub (future feature).
 3.  **Client:** Any smartphone, tablet, or laptop (via Browser).
