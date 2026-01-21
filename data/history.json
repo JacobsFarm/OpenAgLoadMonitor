@@ -1,0 +1,1 @@
+This will store the feeding history as lightweight JSON records, avoiding the overhead of a full SQL database.
