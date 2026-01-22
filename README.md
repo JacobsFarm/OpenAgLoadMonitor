@@ -68,7 +68,7 @@ Instead of standard OCR (which struggles with digital screens in sunlight), we u
 ### Running the Server
 ```bash
 # Clone the repository
-git clone [https://github.com/yourusername/AgLoadMonitor.git](https://github.com/yourusername/AgLoadMonitor.git)
+git clone https://github.com/JacobsFarm/AgLoadmonitor.git
 
 # Install dependencies
 pip install -r requirements.txt
