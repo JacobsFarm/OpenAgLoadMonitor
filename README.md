@@ -8,6 +8,27 @@ No expensive proprietary hardware upgrades needed—just smart software and off-
 
 ---
 
+## 🧠 How it Works
+
+### 1. The Vision Pipeline (YOLO)
+Instead of standard OCR (which struggles with digital screens in sunlight), we use a custom-trained **Ultralytics YOLO model**.
+* **Detection:** The model detects individual digits on the screen.
+* **Logic:** `[1] + [2] + [3] + [0]` detected → Parsed as `1230 kg`.
+* **Stream Optimization:** To reduce latency on the local network, the web interface receives updated JPEG snapshots rather than a heavy RTSP video stream.
+
+<img width="578" height="441" alt="Schermafbeelding 2026-01-23 212203" src="https://github.com/user-attachments/assets/18b496bb-9889-464b-9afd-883789e8616e" />
+
+### 2. The Data Flow
+1.  **Startup:** Tractor starts → Pi Boots → Connects to Camera.
+2.  **Loading:** User selects a Feed Plan on the phone.
+3.  **Monitoring:** * Camera watches the scale.
+    * YOLO parses the numbers.
+    * App calculates "Remaining to load".
+4.  **Completion:** User finishes loading.
+5.  **Shutdown/Sync:** Pi connects to Farm WiFi → Uploads `logs.json` → Downloads updated `plans.json`.
+
+---
+   
 ## 🚀 Key Features
 
 ### Core Functionality
@@ -20,8 +41,6 @@ No expensive proprietary hardware upgrades needed—just smart software and off-
 * **🔄 Auto-Tare:** The software detects when the screen jumps to `0` and automatically switches to the next component in the feed plan.
 * **⚖️ Stability Check:** The system waits for the weight to remain stable for **3 seconds** before logging the data, preventing false readings from a shaking wagon.
 * **📸 Visual Audit Log:** Saves a low-res screenshot of the physical scale for every loaded component. (e.g., *"The system logged 1230kg, and here is the photo of the screen proving it."*)
-
-<img width="578" height="441" alt="Schermafbeelding 2026-01-23 212203" src="https://github.com/user-attachments/assets/18b496bb-9889-464b-9afd-883789e8616e" />
 
 ### Connectivity & Sync
 * **Offline-First Architecture:** The Raspberry Pi acts as a local server. You connect your phone directly to it in the tractor—no internet required to feed.
@@ -37,25 +56,6 @@ No expensive proprietary hardware upgrades needed—just smart software and off-
     * *Mounting:* Directed at the weighing monitor.
     * *Optional:* Secondary camera inside the mixing tub (future feature).
 3.  **Client:** Any smartphone, tablet, or laptop (via Browser).
-
----
-
-## 🧠 How it Works
-
-### 1. The Vision Pipeline (YOLO)
-Instead of standard OCR (which struggles with digital screens in sunlight), we use a custom-trained **Ultralytics YOLO model**.
-* **Detection:** The model detects individual digits on the screen.
-* **Logic:** `[1] + [2] + [3] + [0]` detected → Parsed as `1230 kg`.
-* **Stream Optimization:** To reduce latency on the local network, the web interface receives updated JPEG snapshots rather than a heavy RTSP video stream.
-
-### 2. The Data Flow
-1.  **Startup:** Tractor starts → Pi Boots → Connects to Camera.
-2.  **Loading:** User selects a Feed Plan on the phone.
-3.  **Monitoring:** * Camera watches the scale.
-    * YOLO parses the numbers.
-    * App calculates "Remaining to load".
-4.  **Completion:** User finishes loading.
-5.  **Shutdown/Sync:** Pi connects to Farm WiFi → Uploads `logs.json` → Downloads updated `plans.json`.
 
 ---
 
