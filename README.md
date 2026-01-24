@@ -93,6 +93,7 @@ Accessing the Interface
 - [ ] **Feed Plan Logic:** Develop progress tracking, dynamic component switching, and visual feedback.
 - [ ] **Feed Type Classification:** Auto-detect feed type (e.g., Grass vs. Maize) via internal camera to adjust the plan automatically.
 - [ ] **Production Architecture:** Optimize for performance, security, fault tolerance, and simplify the installation/upgrade process.
+- [ ] **Deployment** share ready webapp with server acces for saving feedplans and logs
 
 ## 🤝 Contributing
 
