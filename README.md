@@ -84,19 +84,24 @@ Accessing the Interface
 
     Navigate to http://192.168.x.x:5000 in your browser.
 
+---
 🗺 Roadmap & Challenges
 
-    [x] Basic Weight Reading: Reading digits via YOLO.
+    [x] Basic camera functionality in the browser.
 
-    [x] Feed Plan Logic: Progress bars and component switching.
+    [ ] Basic Weight Reading: Reading digits via YOLO.
 
-    [ ] Feed Type Recognition: Using a camera inside the tub to visually identify if you are loading Grass vs. Maize and auto-deducting from the plan.
+    [ ] Feed Plan Logic: Progress bars and component switching.
 
-    [ ] Hardware Power Management: Safe shutdown scripts for when the tractor ignition is cut.
+    [ ] Feed Type Recognition: Using a camera inside the tub to visually identify feed (Grass vs. Maize) and auto-deduct from the plan.
+
+    [ ] Full-Scale Web App: Improved handling, efficiency, secure connections, fault detection, and ease of installation/upgrades.
 
 🤝 Contributing
 
 We welcome farmers and developers!
+
+Connect me at jacobsfarmsocial@gmail.com
 
     Fork the Project
 
