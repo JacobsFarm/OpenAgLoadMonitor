@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tractor Monitor</title>
+    
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/jsmpeg.min.js') }}"></script>
 </head>
 <body>
 
@@ -20,7 +22,6 @@
 
         <div id="dashboard-tab" class="tab-content active">
             <div class="grid-container">
-                
                 <div class="card weight-card">
                     <div class="card-header">Totaal Gewicht <span>⚖️</span></div>
                     <div class="weight-display">
@@ -31,9 +32,7 @@
                 </div>
 
                 <div class="card plan-card">
-                    <div class="card-header">
-                        Huidige Taak <span class="step-badge">Stap 2/5</span>
-                    </div>
+                    <div class="card-header">Huidige Taak <span class="step-badge">Stap 2/5</span></div>
                     <div class="progress-section">
                         <div class="progress-info">
                             <strong>{{ stap }}</strong>
@@ -43,11 +42,8 @@
                             <div class="progress-fill" style="width: 72.5%;"></div>
                         </div>
                     </div>
-                    <div class="next-step-preview">
-                        <small>VOLGENDE:</small> Meel (Soja/Raap) - 500 KG
-                    </div>
                 </div>
-
+                
                 <div class="actions-container">
                     <button class="action-btn secondary">-</button>
                     <button class="action-btn primary">Volgende Stap</button>
@@ -58,34 +54,52 @@
 
         <div id="stream-tab" class="tab-content">
             <div class="card">
-                <div class="card-header">Live Feed</div>
+                <div class="card-header">Live Feed (JSMpeg)</div>
                 <div class="video-wrapper">
-                    <img id="live-image" src="" data-src="{{ url_for('main.video_feed') }}" alt="Geen signaal">
+                    <canvas id="video-canvas"></canvas>
                 </div>
                 <div class="stream-controls">
-                    <div class="status-text">● Live</div>
-                    <button class="action-btn primary full-width" onclick="forceReloadStream()">🔄 Herstart</button>
+                    <div class="status-text">● Live Verbinding</div>
+                    <button class="action-btn primary full-width" onclick="restartStream()">🔄 Herstart</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        let player = null;
+
         function switchTab(id, btn) {
             document.querySelectorAll('.tab-content, .tab-link').forEach(e => e.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             btn.classList.add('active');
 
-            const img = document.getElementById('live-image');
-            // Alleen stream laden als tab open is (bespaart data)
-            id === 'stream-tab' ? (img.src || (img.src = img.dataset.src)) : img.src = "";
+            if (id === 'stream-tab') {
+                startStream();
+            } else {
+                stopStream();
+            }
         }
 
-        function forceReloadStream() {
-            const img = document.getElementById('live-image');
-            const src = img.dataset.src;
-            img.src = "";
-            setTimeout(() => img.src = src, 100);
+        function startStream() {
+            if (player) return;
+            const canvas = document.getElementById('video-canvas');
+            // Verbind met poort 8080 (De Video Server)
+            const url = 'ws://' + window.location.hostname + ':8080/';
+            console.log("Start JSMpeg op: " + url);
+            player = new JSMpeg.Player(url, { canvas: canvas, autoplay: true, audio: false, loop: true });
+        }
+
+        function stopStream() {
+            if (player) {
+                player.destroy();
+                player = null;
+            }
+        }
+
+        function restartStream() {
+            stopStream();
+            setTimeout(startStream, 500);
         }
     </script>
 </body>
