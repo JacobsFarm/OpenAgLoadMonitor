@@ -12,13 +12,13 @@
 
     <div class="app-wrapper">
         <nav class="tab-navigation">
-            <button class="tab-link active" onclick="switchTab('dashboard-tab', this)">
+            <button class="tab-link active" data-tab="dashboard-tab">
                 <span>📊</span> Monitor
             </button>
-            <button class="tab-link" onclick="switchTab('numbers-tab', this)">
+            <button class="tab-link" data-tab="numbers-tab">
                 <span>⚖️</span> Lading
             </button>
-            <button class="tab-link" onclick="switchTab('stream-tab', this)">
+            <button class="tab-link" data-tab="stream-tab">
                 <span>📹</span> Camera
             </button>
         </nav>
@@ -72,46 +72,12 @@
                 </div>
                 <div class="stream-controls">
                     <div class="status-text">● Live Verbinding</div>
-                    <button class="action-btn primary full-width" onclick="restartStream()">🔄 Herstart</button>
+                    <button id="restart-btn" class="action-btn primary full-width">🔄 Herstart</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        let player = null;
-
-        function switchTab(id, btn) {
-            document.querySelectorAll('.tab-content, .tab-link').forEach(e => e.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            btn.classList.add('active');
-
-            if (id === 'stream-tab') {
-                startStream();
-            } else {
-                stopStream();
-            }
-        }
-
-        function startStream() {
-            if (player) return;
-            const canvas = document.getElementById('video-canvas');
-            const url = 'ws://' + window.location.hostname + ':8080/';
-            console.log("Start JSMpeg op: " + url);
-            player = new JSMpeg.Player(url, { canvas: canvas, autoplay: true, audio: false, loop: true });
-        }
-
-        function stopStream() {
-            if (player) {
-                player.destroy();
-                player = null;
-            }
-        }
-
-        function restartStream() {
-            stopStream();
-            setTimeout(startStream, 500);
-        }
-    </script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

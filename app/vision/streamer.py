@@ -1,74 +1,89 @@
 import cv2
+import threading
 import time
-import json
-import os
+import app.vision.ocr as ocr_logic 
+# NIEUW: Importeer je brein
+from app.services.weight_logic import stabilizer 
 
-def get_rtsp_url():
-    try:
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        root_dir = os.path.dirname(os.path.dirname(current_dir))
-        json_path = os.path.join(root_dir, 'data', 'config.json')
-        
-        if not os.path.exists(json_path):
-            print(f"ERROR: File not found at: {json_path}")
-            return None
+# ... (De global_state en get_video_source functies blijven hetzelfde als in) ...
+global_state = {
+    "latest_weight_data": {"gewicht": 0},
+    "current_frame": None,
+    "lock": threading.Lock()
+}
+latest_weight_data = global_state["latest_weight_data"]
 
-        with open(json_path, 'r') as f:
-            config_data = json.load(f)
-            return config_data.get("RTSP_URL_BAK")
-            
-    except Exception as e:
-        print(f"ERROR fetching URL: {e}")
-        return None
+def get_video_source(config, type_key):
+    # ... (Zelfde als voorheen) ...
+    if config.get('VIDEO_SOURCE_TYPE') == 'file':
+        return config.get('VIDEO_SOURCE_FILE')
+    return config.get('RTSP_URL_OCR') if type_key == 'OCR' else config.get('RTSP_URL_BAK')
 
-def generate_frames():
-    RTSP_URL = get_rtsp_url()
+# --- ACHTERGROND PROCES ---
+def ocr_background_worker(app_config):
+    print("--- Starten van OCR Achtergrond Thread ---")
     
-    if not RTSP_URL:
-        print("ERROR: Could not load RTSP_URL.")
-        return
-
-    camera = cv2.VideoCapture(RTSP_URL)
-    camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-
-    if not camera.isOpened():
-        print(f"ERROR: Could not open camera at: {RTSP_URL}")
-
-    TARGET_FPS = 5             
-    FRAME_INTERVAL = 1.0 / TARGET_FPS 
-    last_frame_time = 0
-
+    if ocr_logic.reader is None:
+        ocr_logic.init_model(app_config)
+    
+    src = get_video_source(app_config, 'OCR')
+    cap = cv2.VideoCapture(src)
+    
     while True:
-        success, frame = camera.read()
-
+        success, frame = cap.read()
         if not success:
-            print("Connection lost, reconnecting...")
-            camera.release()
-            time.sleep(2)
+            if app_config.get('VIDEO_SOURCE_TYPE') == 'file':
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                continue
+            else:
+                time.sleep(2)
+                cap.open(src)
+                continue
+
+        if ocr_logic.reader is not None:
+            # 1. HAAL RUWE DATA OP (OGEN)
+            raw_weight, annotated_frame = ocr_logic.reader.detect_numbers(frame)
             
-            RTSP_URL = get_rtsp_url()
-            camera = cv2.VideoCapture(RTSP_URL)
-            camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            continue
-
-        current_time = time.time()
-        if (current_time - last_frame_time) < FRAME_INTERVAL:
-            continue
+            # 2. VERWERK MET LOGICA (BREIN)
+            # Hier wordt het getal "schoongemaakt" en gestabiliseerd
+            clean_weight = stabilizer.process_new_reading(raw_weight)
+            
+            # 3. OPSLAAN (GEHEUGEN)
+            with global_state["lock"]:
+                latest_weight_data["gewicht"] = clean_weight
+                global_state["current_frame"] = annotated_frame.copy()
         
-        last_frame_time = current_time
+        # Korte pauze voor 'realtime' gevoel (50fps check)
+        time.sleep(0.02)
 
-        height, width = frame.shape[:2]
-        if width > 640:
-            new_width = 640
-            new_height = int(height * (new_width / width))
-            frame = cv2.resize(frame, (new_width, new_height))
+# ... (De rest van het bestand: start_ocr_thread en generate functies blijven gelijk) ...
+def start_ocr_thread(app_config):
+    t = threading.Thread(target=ocr_background_worker, args=(app_config,))
+    t.daemon = True
+    t.start()
 
-        ret, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 40])
-        
-        if not ret:
+def generate_ocr_frames(app_config):
+    while True:
+        frame = None
+        with global_state["lock"]:
+            if global_state["current_frame"] is not None:
+                frame = global_state["current_frame"]
+        if frame is not None:
+            try:
+                ret, buffer = cv2.imencode('.jpg', frame)
+                if ret: yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+            except: pass
+        time.sleep(0.1)
+
+def generate_bak_frames(app_config):
+    src = get_video_source(app_config, 'BAK')
+    cap = cv2.VideoCapture(src)
+    while True:
+        success, frame = cap.read()
+        if not success:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
             continue
-
-        frame_bytes = buffer.tobytes()
-
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        try:
+            ret, buffer = cv2.imencode('.jpg', frame)
+            if ret: yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+        except: pass
