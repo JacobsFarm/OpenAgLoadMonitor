@@ -89,10 +89,11 @@ Accessing the Interface
 ## 🗺 Roadmap & Challenges
 
 - [x] **Browser Camera Integration:** Basic camera functionality operational in the browser.
-- [ ] **Automated Weight Reading:** Implement digit recognition using [YOLO](https://github.com/ultralytics/ultralytics).
+- [x] **Automated Weight Reading:** Implement digit recognition using [YOLO](https://github.com/ultralytics/ultralytics).
 - [ ] **Feed Plan Logic:** Develop progress tracking, dynamic component switching, and visual feedback.
 - [ ] **Feed Type Classification:** Auto-detect feed type (e.g., Grass vs. Maize) via internal camera to adjust the plan automatically.
-- [ ] **Production Architecture:** Optimize for performance, security, fault tolerance, and simplify the installation/upgrade process.
+- [ ] **start over:** The created technical debt is unsustainable, burn the the existing repository and re-engineer the system with a architecture that makes sense
+- [ ] **Production Architecture:** Further Optimize for performance, security, fault tolerance, and simplify the installation/upgrade process.
 - [ ] **Deployment** share ready webapp with server acces for saving feedplans and logs
 
 ## 🤝 Contributing
