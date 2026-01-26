@@ -8,7 +8,7 @@ class DigitalReadout:
         print(f"Laden van YOLO model: {model_path}")
         self.model = YOLO(model_path)
 
-    def find_screen_box(self, frame, target_labels=['lcd', 'monitor']):
+    def find_screen_box(self, frame, target_labels=['lcd-screen', 'monitor']):
         """
         Zoekt naar een specifiek object (bijv. lcd of monitor) om op in te zoomen.
         Geeft terug: (x1, y1, x2, y2) of None
@@ -75,3 +75,4 @@ def init_model(app_config):
     global reader
     path = os.path.join(os.getcwd(), app_config['YOLO_MODEL_PATH'])
     reader = DigitalReadout(path)
+
