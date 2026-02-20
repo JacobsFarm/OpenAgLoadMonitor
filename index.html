@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgLoadMonitor | Open Source Feed Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2e7d32; /* Boerderij Groen */
+            --secondary: #1b5e20;
+            --accent: #f57c00; /* Oranje voor actie/waarschuwing */
+            --bg: #f9fbf9;
+            --card-bg: #ffffff;
+            --text: #1a1a1a;
+            --code-bg: #2d2d2d;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 4rem 1rem;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: -3rem auto 3rem;
+            padding: 0 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+
+        h1 { margin: 0; font-size: 2.8rem; letter-spacing: -1px; }
+        h2 { color: var(--primary); font-size: 1.8rem; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h3 { color: var(--secondary); margin-top: 1.5rem; }
+
+        .tagline { font-size: 1.2rem; opacity: 0.9; margin-top: 10px; }
+
+        /* Simulatie van de digit herkenning (vervangt afbeelding) */
+        .vision-demo {
+            background: #000;
+            padding: 20px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            border: 4px solid #444;
+        }
+        .digit {
+            background: #111;
+            color: #ff3d00;
+            font-family: 'Courier New', monospace;
+            font-size: 3rem;
+            padding: 10px 20px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            text-shadow: 0 0 10px #ff3d00;
+            position: relative;
+        }
+        .digit::before {
+            content: "YOLO DETECT";
+            position: absolute;
+            top: -15px;
+            left: 0;
+            font-size: 0.6rem;
+            color: #4caf50;
+            background: rgba(0,0,0,0.8);
+        }
+
+        .flow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .flow-step {
+            background: #f1f8e9;
+            padding: 1rem;
+            border-radius: 8px;
+            border-top: 4px solid var(--primary);
+        }
+
+        pre {
+            background: var(--code-bg);
+            color: #fff;
+            padding: 1.2rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+
+        .roadmap-list {
+            list-style: none;
+            padding: 0;
+        }
+        .roadmap-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        .roadmap-list li.done { color: #888; text-decoration: line-through; }
+        .roadmap-list li::before {
+            content: "✓";
+            margin-right: 15px;
+            background: #ddd;
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            color: white;
+        }
+        .roadmap-list li.done::before { background: var(--primary); }
+
+        .btn {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: bold;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .btn:hover { background: #e66a00; transform: translateY(-2px); }
+
+        footer { text-align: center; color: #666; padding-bottom: 3rem; }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2rem; }
+            .container { margin-top: -1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>AgLoadMonitor 🚜📊</h1>
+    <p class="tagline">Open Source Feed Loading Assistant powered by Computer Vision</p>
+</header>
+
+<div class="container">
+    
+    <div class="card">
+        <h2>Over het Project</h2>
+        <p>AgLoadMonitor is een open-source oplossing ontworpen om het voerproces op de boerderij te digitaliseren zonder dure merkspecifieke hardware. Met een Raspberry Pi en <strong>AI (YOLO)</strong> lezen we de fysieke schermen van je bestaande weegcomputers uit.</p>
+    </div>
+
+    <div class="card">
+        <h2>🧠 Hoe het Werkt</h2>
+        <h3>De Vision Pipeline</h3>
+        <p>In plaats van foutgevoelige OCR gebruiken we <strong>Ultralytics YOLO</strong> voor objectdetectie van de individuele cijfers. Dit werkt ook in direct zonlicht en bij trillingen.</p>
+        
+        <div class="vision-demo">
+            <div class="digit">1</div>
+            <div class="digit">2</div>
+            <div class="digit">3</div>
+            <div class="digit">0</div>
+        </div>
+        <p style="text-align: center; font-size: 0.9rem; color: #666;">Detectie logica: <code>[1]+[2]+[3]+[0]</code> → <strong>1230 kg</strong></p>
+
+        <div class="flow-grid">
+            <div class="flow-step">
+                <strong>1. Start</strong><br>Pi boot zodra de trekker op contact gaat.
+            </div>
+            <div class="flow-step">
+                <strong>2. Detectie</strong><br>Camera parsed de cijfers in real-time.
+            </div>
+            <div class="flow-step">
+                <strong>3. Monitoring</strong><br>Volg voortgang live op je smartphone.
+            </div>
+            <div class="flow-step">
+                <strong>4. Sync</strong><br>Logs worden via Farm WiFi gepusht naar de cloud.
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🚀 Key Features</h2>
+        <ul>
+            <li><strong>Auto-Tare:</strong> Schakelt automatisch door naar het volgende product zodra de weegschaal op 0 springt.</li>
+            <li><strong>Visual Audit:</strong> Slaat automatisch een foto op van de weegcomputer bij elke geladen component als bewijs.</li>
+            <li><strong>Offline-First:</strong> Werkt volledig zonder internet in de stal; sync gebeurt zodra de Pi WiFi vindt.</li>
+            <li><strong>Flexibel Voeren:</strong> Pas je rantsoen met ±10% aan via de web-app op basis van de eetlust van de kudde.</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>📦 Installatie & Gebruik</h2>
+        <p>Installeer de benodigde Python pakketten op je Raspberry Pi:</p>
+        <pre>
+git clone https://github.com/JacobsFarm/AgLoadmonitor.git
+pip install -r requirements.txt
+python app.py</pre>
+        <p>Open je browser en navigeer naar het IP-adres van de Pi op poort 5000.</p>
+    </div>
+
+    <div class="card">
+        <h2>🗺 Roadmap</h2>
+        <ul class="roadmap-list">
+            <li class="done">Browser Camera Integratie</li>
+            <li class="done">Digit Recognition via YOLO</li>
+            <li>Voerplan Logica & Progress Tracking</li>
+            <li>Automatische herkenning voertype (Gras vs Mais)</li>
+            <li>Productie Architectuur & Security</li>
+        </ul>
+    </div>
+
+    <footer>
+        <p>Vragen of bijdragen? 🌾</p>
+        <a href="mailto:jacobsfarmsocial@gmail.com" class="btn">📧 Contacteer Jacobs Farm</a>
+        <p style="margin-top: 20px; font-size: 0.8rem;">AgLoadMonitor is een Open Source initiatief.</p>
+    </footer>
+</div>
+
+</body>
+</html>
