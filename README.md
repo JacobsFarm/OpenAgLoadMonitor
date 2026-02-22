@@ -95,6 +95,12 @@ Accessing the Interface
 ```
 ---
 
+For the jetson
+
+sudo apt update
+sudo apt install ffmpeg
+
+
 ## 🗺 Roadmap & Challenges
 
 - [x] **Browser Camera Integration:** Basic camera functionality operational in the browser.
