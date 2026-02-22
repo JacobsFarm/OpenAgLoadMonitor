@@ -18,7 +18,7 @@ Instead of standard OCR (which struggles with digital screens in sunlight), we u
   
 <img width="641" height="410" alt="Schermafbeelding 2026-01-26 214556" src="https://github.com/user-attachments/assets/dd896495-5972-489a-8b5f-03c8952141c9" />
 
-* **OpenDataset:** for this project the dataset where is trained on is available at https://universe.roboflow.com/projects-4essy/feedload-monitors
+**OpenDataset:** for this project the dataset where is trained on is available at https://universe.roboflow.com/projects-4essy/feedload-monitors
 
 ### 2. The Data Flow
 1.  **Startup:** Tractor starts → Pi Boots → Connects to Camera.
