@@ -52,7 +52,7 @@ Instead of standard OCR (which struggles with digital screens in sunlight), we u
 
 ## 🛠 Hardware Setup
 
-1.  **Compute:** Raspberry Pi 4 (or 5) acting as the local web server and CV processor.
+1.  **Compute:** Jetson Nano acting as the local web server and Image processor.
     * *Power:* Connected to the tractor's 12V ignition (boots on start).
 2.  **Vision:** Standard IP Camera.
     * *Mounting:* Directed at the weighing monitor.
@@ -64,7 +64,7 @@ Instead of standard OCR (which struggles with digital screens in sunlight), we u
 ## 📦 Installation & Usage
 
 ### Prerequisites
-* Python 3.11+
+* Python 3.10
 * Ultralytics (`pip install ultralytics`)
 * Flask or Django (for the web server)
 * OpenCV (`cv2`)
@@ -72,6 +72,9 @@ Instead of standard OCR (which struggles with digital screens in sunlight), we u
 
 ### Running the Server
 ```bash
+# Check the ultralytics docs for booting the Jetson and installing the Embedded Cuda
+https://docs.ultralytics.com/guides/nvidia-jetson/#detailed-comparison-tables 
+
 # Clone the repository
 git clone https://github.com/JacobsFarm/AgLoadmonitor.git
 
@@ -83,9 +86,12 @@ python app.py
 
 Accessing the Interface
 
-    Connect your phone to the Raspberry Pi's WiFi Hotspot.
+    Connect your phone to the Jetson's WiFi Hotspot.
 
     Navigate to http://192.168.x.x:5000 in your browser.
+
+    Connecto to http://192.168.x.x:5000/video_feed_ocr #for seeing what the feedmonitor camera sees
+    Connecto to http://192.168.x.x:5000/video_feed_bak #for seeing what the feedmonitor camera sees without the Yolo prediction
 ```
 ---
 
