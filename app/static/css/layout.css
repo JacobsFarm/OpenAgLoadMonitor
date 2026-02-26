@@ -1,0 +1,54 @@
+:root {
+    --bg-color: #121212;
+    --card-bg: #1e1e1e;
+    --text-main: #ffffff;
+    --text-muted: #aaaaaa;
+    --accent-green: #2ecc71;
+    --accent-orange: #e67e22;
+    --border-radius: 16px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    overscroll-behavior-y: none;
+    overflow-x: hidden;
+}
+
+.app-wrapper { 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    padding: 10px; 
+}
+
+/* Essentieel: Verbergt inactieve tabs en herstelt klikbaarheid */
+.tab-content { 
+    display: none; 
+    animation: fadeIn 0.25s ease-out; 
+}
+
+.tab-content.active { 
+    display: block; 
+}
+
+@keyframes fadeIn { 
+    from { opacity: 0; transform: translateY(10px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}
+
+.grid-container { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 15px; 
+}
+
+@media (min-width: 768px) {
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas: "weight plan" "actions actions";
+    }
+}
