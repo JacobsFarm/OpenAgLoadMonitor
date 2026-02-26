@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tractor Monitor</title>
     
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    
     <script src="{{ url_for('static', filename='js/jsmpeg.min.js') }}"></script>
 </head>
 <body>
@@ -13,69 +16,26 @@
     <div class="app-wrapper">
         <nav class="tab-navigation">
             <button class="tab-link active" data-tab="dashboard-tab">
-                <span>📊</span> Monitor
+                <span>📊</span>
             </button>
+            
             <button class="tab-link" data-tab="numbers-tab">
-                <span>⚖️</span> Lading
+                <span>⚖️</span>
             </button>
+            
             <button class="tab-link" data-tab="stream-tab">
-                <span>📹</span> Camera
+                <span>📹</span>
+            </button>
+            
+            <button class="tab-link" data-tab="settings-tab">
+                <span>⚙️</span>
             </button>
         </nav>
 
-        <div id="dashboard-tab" class="tab-content active">
-            <div class="grid-container">
-                <div class="card weight-card">
-                    <div class="card-header">Totaal Gewicht <span>⚖️</span></div>
-                    <div class="weight-display">
-                        <span class="weight-value">{{ gewicht }}</span>
-                        <span class="weight-unit">KG</span>
-                    </div>
-                    <div class="weight-sub">Laatste vracht: 4500 kg</div>
-                </div>
-
-                <div class="card plan-card">
-                    <div class="card-header">Huidige Taak <span class="step-badge">Stap 2/5</span></div>
-                    <div class="progress-section">
-                        <div class="progress-info">
-                            <strong>{{ stap }}</strong>
-                            <span>725 / {{ doel }} KG</span>
-                        </div>
-                        <div class="progress-track">
-                            <div class="progress-fill" style="width: 72.5%;"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="actions-container">
-                    <button class="action-btn secondary">-</button>
-                    <button class="action-btn primary">Volgende Stap</button>
-                    <button class="action-btn secondary">+</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="numbers-tab" class="tab-content">
-            <div class="display-container">
-                <div class="number-card-clean">
-                   <span class="clean-number">{{ gewicht }}</span>
-                   <span class="clean-unit">KG</span>
-                </div>
-            </div>
-        </div>
-
-        <div id="stream-tab" class="tab-content">
-            <div class="card">
-                <div class="card-header">Live Feed (JSMpeg)</div>
-                <div class="video-wrapper">
-                    <canvas id="video-canvas"></canvas>
-                </div>
-                <div class="stream-controls">
-                    <div class="status-text">● Live Verbinding</div>
-                    <button id="restart-btn" class="action-btn primary full-width">🔄 Herstart</button>
-                </div>
-            </div>
-        </div>
+        {% include 'includes/monitor.html' %}
+        {% include 'includes/lading.html' %}
+        {% include 'includes/camera.html' %}
+        {% include 'includes/settings.html' %}
     </div>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
