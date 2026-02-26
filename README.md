@@ -90,9 +90,9 @@ Accessing the Interface
 
     Navigate to http://192.168.x.x:5000 in your browser.
 
-    Connecto to http://192.168.x.x:5000/video_feed_ocr #for seeing what the feedmonitor camera sees
-    Connecto to http://192.168.x.x:5000/video_feed_cam1 #for seeing what the feedmonitor camera sees without the Yolo prediction
-    Connecto to http://192.168.x.x:5000/video_feed_cam2 #for seeing what the feedmonitor camera sees without the Yolo prediction
+    Connecto to http://192.168.x.x:5000/video_feed_ocr #for seeing what the feedmonitor camera sees with yolo prediction
+    Connecto to http://192.168.x.x:5000/video_feed_cam1 #for checking Camera 1 feed
+    Connecto to http://192.168.x.x:5000/video_feed_cam2 #for checking Camera 2 feed
 ```
 ---
 
