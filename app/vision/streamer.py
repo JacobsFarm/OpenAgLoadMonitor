@@ -50,9 +50,35 @@ def get_absolute_path(relative_path):
 def get_video_source(config, type_key):
     if config.get('VIDEO_SOURCE_TYPE') == 'file':
         video_path = get_absolute_path(config.get('VIDEO_SOURCE_FILE'))
-        print(f"DEBUG: Proberen videobestand te laden: {video_path}")
         return video_path
-    return config.get('RTSP_URL_OCR') if type_key == 'OCR' else config.get('RTSP_URL_BAK')
+    
+    if type_key == 'OCR':
+        return config.get('RTSP_URL_OCR')
+    elif type_key == 'CAM2':
+        return config.get('RTSP_URL_2')
+    else:
+        return config.get('RTSP_URL_1')
+
+# --- Voeg dit toe ONDERAAN streamer.py (onder generate_bak_frames): ---
+def generate_cam2_frames(app_config):
+    src = get_video_source(app_config, 'CAM2')
+    cap = cv2.VideoCapture(src)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, BUFFER_SIZE)
+    while True:
+        success, frame = cap.read()
+        if not success:
+            if app_config.get('VIDEO_SOURCE_TYPE') == 'file':
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            else:
+                time.sleep(2)
+                cap.open(src)
+            continue
+        try:
+            ret, buffer = cv2.imencode('.jpg', frame)
+            if ret:
+                yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+        except:
+            pass
 
 # ================= WORKERS =================
 
