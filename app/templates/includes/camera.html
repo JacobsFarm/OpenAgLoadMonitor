@@ -1,13 +1,24 @@
 <div id="stream-tab" class="tab-content">
+    
     <div class="card">
-        <div class="card-header">Live Feed (Camera) <span>📹</span></div>
+        <div class="card-header">Camera 1 (Bak) <span>📹</span></div>
         <div class="video-wrapper">
-            <canvas id="video-canvas"></canvas>
-            
-            </div>
-        <div class="stream-controls">
-            <div class="status-text">● Live Verbinding</div>
-            <button id="restart-btn" class="action-btn primary full-width" style="margin-top: 15px;">🔄 Herstart</button>
+            <img src="{{ url_for('main.video_feed_bak') }}" alt="Camera Feed 1">
         </div>
     </div>
+
+    {% if config.ADD_SECOND_CAMERA %}
+    <div class="card" style="margin-top: 15px;">
+        <div class="card-header">Camera 2 (Overzicht) <span>📹</span></div>
+        <div class="video-wrapper">
+            <img src="{{ url_for('main.video_feed_cam2') }}" alt="Camera Feed 2">
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="stream-controls" style="margin-top: 15px;">
+        <div class="status-text">● Live Verbinding</div>
+        <button id="restart-btn" class="action-btn primary full-width" style="margin-top: 15px;">🔄 Herstart Streams</button>
+    </div>
+    
 </div>
