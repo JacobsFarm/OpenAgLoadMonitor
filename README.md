@@ -29,7 +29,8 @@ Instead of standard OCR (which struggles with digital screens in sunlight), we u
 4.  **Completion:** User finishes loading.
 5.  **Shutdown/Sync:** Pi connects to Farm WiFi → Uploads `logs.json` → Downloads updated `plans.json`.
 
-The frontend for the AI Detector project. Built with SvelteKit.
+
+**
 ---
    
 ## 🚀 Key Features
@@ -70,6 +71,8 @@ The frontend for the AI Detector project. Built with SvelteKit.
 * Flask or Django (for the web server)
 * OpenCV (`cv2`)
 * winget install "Gyan.FFmpeg"
+* go2rtc.exe downloadable from https://github.com/AlexxIT/go2rtc
+* **The frontend for the AI Detector project. Built with SvelteKit.
 
 ### Running the Server
 ```bash
