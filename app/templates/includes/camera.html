@@ -2,22 +2,20 @@
     
     <div class="card">
         <div class="card-header">Camera 1 (Bak) <span>📹</span></div>
-        <div class="video-wrapper">
-            <img src="{{ url_for('main.video_feed_bak') }}" alt="Camera Feed 1">
-        </div>
+        <div class="video-wrapper" id="video-wrapper-bak" style="aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden;">
+            </div>
     </div>
 
     {% if config.ADD_SECOND_CAMERA %}
     <div class="card" style="margin-top: 15px;">
         <div class="card-header">Camera 2 (Overzicht) <span>📹</span></div>
-        <div class="video-wrapper">
-            <img src="{{ url_for('main.video_feed_cam2') }}" alt="Camera Feed 2">
-        </div>
+        <div class="video-wrapper" id="video-wrapper-cam2" style="aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden;">
+            </div>
     </div>
     {% endif %}
 
     <div class="stream-controls" style="margin-top: 15px;">
-        <div class="status-text">● Live Verbinding</div>
+        <div class="status-text">● Live Verbinding (WebRTC)</div>
         <button id="restart-btn" class="action-btn primary full-width" style="margin-top: 15px;">🔄 Herstart Streams</button>
     </div>
     
