@@ -72,7 +72,7 @@ Instead of standard OCR (which struggles with digital screens in sunlight), we u
 * OpenCV (`cv2`)
 * winget install "Gyan.FFmpeg"
 * go2rtc.exe downloadable from https://github.com/AlexxIT/go2rtc
-* **The frontend for the AI Detector project. Built with SvelteKit.
+* **The frontend is Built with SvelteKit.
 
 ### Running the Server
 ```bash
