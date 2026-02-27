@@ -29,6 +29,7 @@ Instead of standard OCR (which struggles with digital screens in sunlight), we u
 4.  **Completion:** User finishes loading.
 5.  **Shutdown/Sync:** Pi connects to Farm WiFi → Uploads `logs.json` → Downloads updated `plans.json`.
 
+The frontend for the AI Detector project. Built with SvelteKit.
 ---
    
 ## 🚀 Key Features
