@@ -8,25 +8,22 @@ import app.vision.ocr as ocr_logic
 from app.services.weight_logic import stabilizer
 
 # ================= CONFIGURATION =================
-FRAME_SKIP_INTERVAL = 2       # Verwerk 1 op de X frames
-BUFFER_SIZE = 1               # Lage latentie buffer
+FRAME_SKIP_INTERVAL = 2       
 AUTO_ZOOM_ENABLED = True      
 AUTO_ZOOM_TARGETS = ['monitor']
-AUTO_ZOOM_SAMPLES = 20        # Aantal frames voor stabiele lock
-AUTO_ZOOM_PADDING = 15        # Extra pixels rondom het scherm
+AUTO_ZOOM_SAMPLES = 20        
+AUTO_ZOOM_PADDING = 15        
 
 ENABLE_SNAPSHOTS = False     
 SNAPSHOT_INTERVAL = 20        
 
 # ================= GLOBAL STATE =================
-# Deze variabelen moeten op top-level staan voor de imports in endpoints.py
 global_state = {
     "latest_weight_data": {"gewicht": 0},
     "current_frame": None,
     "lock": threading.Lock()
 }
 
-# Fix voor de ImportError:
 latest_weight_data = global_state["latest_weight_data"]
 
 zoom_state = {
@@ -39,91 +36,44 @@ zoom_state = {
 # ================= UTILS =================
 
 def get_absolute_path(relative_path):
-    """Zorgt dat paden altijd kloppen, ongeacht vanaf waar het script wordt gestart."""
     if os.path.isabs(relative_path):
         return relative_path
     base_path = os.path.dirname(os.path.abspath(__file__))
-    # We gaan 2 mappen omhoog omdat streamer.py in app/vision/ staat
     project_root = os.path.abspath(os.path.join(base_path, "../../"))
     return os.path.join(project_root, relative_path)
-
-def get_video_source(config, type_key):
-    if config.get('VIDEO_SOURCE_TYPE') == 'file':
-        video_path = get_absolute_path(config.get('VIDEO_SOURCE_FILE'))
-        return video_path
-    
-    if type_key == 'OCR':
-        return config.get('RTSP_URL_OCR')
-    elif type_key == 'CAM2':
-        return config.get('RTSP_URL_2')
-    else:
-        return config.get('RTSP_URL_1')
-
-# --- Voeg dit toe ONDERAAN streamer.py (onder generate_bak_frames): ---
-def generate_cam2_frames(app_config):
-    src = get_video_source(app_config, 'CAM2')
-    cap = cv2.VideoCapture(src)
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, BUFFER_SIZE)
-    while True:
-        success, frame = cap.read()
-        if not success:
-            if app_config.get('VIDEO_SOURCE_TYPE') == 'file':
-                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            else:
-                time.sleep(2)
-                cap.open(src)
-            continue
-        try:
-            ret, buffer = cv2.imencode('.jpg', frame)
-            if ret:
-                yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-        except:
-            pass
 
 # ================= WORKERS =================
 
 def ocr_background_worker(app_config):
-    print(f"--- OCR Service Started (Jetson/Linux) | Interval: {FRAME_SKIP_INTERVAL} ---")
+    print(f"--- OCR Service Started (Go2rtc RTSP) | Interval: {FRAME_SKIP_INTERVAL} ---")
     
     snapshot_dir = get_absolute_path(os.path.join('data', 'snapshots'))
     os.makedirs(snapshot_dir, exist_ok=True)
     last_snapshot_time = 0
 
-    # Initialiseer model
     if ocr_logic.reader is None:
-        # Zorg dat het modelpad ook absoluut is voor de Jetson
         model_p = get_absolute_path(app_config.get('YOLO_MODEL_PATH'))
         app_config['YOLO_MODEL_PATH'] = model_p
         ocr_logic.init_model(app_config)
     
-    src = get_video_source(app_config, 'OCR')
-    is_file = app_config.get('VIDEO_SOURCE_TYPE') == 'file'
+    # We luisteren nu naar de interne, supersnelle Go2rtc RTSP stream!
+    go2rtc_rtsp_url = "rtsp://127.0.0.1:8554/cam_bak"
     
-    # Gebruik CAP_FFMPEG voor bestanden op Linux
-    cap = cv2.VideoCapture(src, cv2.CAP_FFMPEG if is_file else cv2.CAP_ANY)
-    
-    if not cap.isOpened():
-        print(f"❌ FOUT: Kan videobron niet openen: {src}")
-        # Check of bestand bestaat als het een file is
-        if is_file and not os.path.exists(src):
-            print(f"   --> Bestand niet gevonden op disk!")
-        return
+    # Forceer de FFMPEG backend en zet de buffer op 1 voor zo min mogelijk vertraging
+    print(f"Verbinden met interne videostream: {go2rtc_rtsp_url}")
+    cap = cv2.VideoCapture(go2rtc_rtsp_url, cv2.CAP_FFMPEG)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, BUFFER_SIZE)
     frame_count = 0
 
     while True:
         success, full_frame = cap.read()
         
         if not success:
-            if not is_file:
-                # RTSP Stream herstellen
-                time.sleep(2)
-                cap.open(src)
-            else:
-                # Video bestand loopen
-                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                time.sleep(0.1)
+            print("⚠️ Fout bij lezen van Go2rtc RTSP stream, wacht even en probeer opnieuw...")
+            time.sleep(2)
+            cap.open(go2rtc_rtsp_url, cv2.CAP_FFMPEG)
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             continue
 
         frame_count += 1
@@ -142,7 +92,6 @@ def ocr_background_worker(app_config):
                         box = ocr_logic.reader.find_screen_box(full_frame, AUTO_ZOOM_TARGETS)
                         if box:
                             zoom_state["candidates"].append(box)
-                            print(f"Sampling... {len(zoom_state['candidates'])}/{AUTO_ZOOM_SAMPLES}")
                             
                             if len(zoom_state["candidates"]) >= AUTO_ZOOM_SAMPLES:
                                 median_box = np.median(zoom_state["candidates"], axis=0).astype(int)
@@ -156,7 +105,6 @@ def ocr_background_worker(app_config):
                                 if (x2 - x1) > 50 and (y2 - y1) > 50:
                                     zoom_state["coords"] = (x1, y1, x2, y2)
                                     zoom_state["locked"] = True
-                                    print(f"✅ STABLE LOCK ACQUIRED: {zoom_state['coords']}")
                                 else:
                                     zoom_state["candidates"] = []
                     except Exception as e:
@@ -193,6 +141,7 @@ def start_ocr_thread(app_config):
     t.start()
 
 def generate_ocr_frames(app_config):
+    """Blijft behouden voor als je de OCR bounding boxes in je browser wilt debuggen via /video_feed_ocr"""
     while True:
         frame = None
         with global_state["lock"]:
@@ -207,23 +156,3 @@ def generate_ocr_frames(app_config):
             except:
                 pass
         time.sleep(0.1)
-
-def generate_bak_frames(app_config):
-    src = get_video_source(app_config, 'BAK')
-    cap = cv2.VideoCapture(src)
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, BUFFER_SIZE)
-    while True:
-        success, frame = cap.read()
-        if not success:
-            if app_config.get('VIDEO_SOURCE_TYPE') == 'file':
-                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            else:
-                time.sleep(2)
-                cap.open(src)
-            continue
-        try:
-            ret, buffer = cv2.imencode('.jpg', frame)
-            if ret:
-                yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-        except:
-            pass
