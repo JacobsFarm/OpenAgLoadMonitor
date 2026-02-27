@@ -1,39 +1,31 @@
-// Globale variabele voor de videospeler
-let player = null;
-
 document.addEventListener("DOMContentLoaded", function() {
-    console.log("Tractor Monitor JS geladen!");
+    console.log("Tractor Monitor JS geladen (Go2rtc versie)!");
 
-    // 1. Start direct met data ophalen (Polling)
     startDataPolling();
 
-    // 2. Setup Tab Navigatie
     const tabLinks = document.querySelectorAll('.tab-link');
     
     tabLinks.forEach(button => {
         button.addEventListener('click', function() {
             const targetTabId = this.getAttribute('data-tab');
             
-            // Verwijder active class van alle knoppen en content
             tabLinks.forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
 
-            // Activeer de aangeklikte tab
             this.classList.add('active');
             document.getElementById(targetTabId).classList.add('active');
 
-            // Video logica: alleen afspelen als tab open is (bespaart data)
+            // Beheer streams afhankelijk van actieve tab
             if (targetTabId === 'stream-tab') {
                 startStream();
             } else {
-                 stopStream();
+                stopStream();
             }
         });
     });
 
-    // 3. Setup Herstart knop
     const restartBtn = document.getElementById('restart-btn');
     if (restartBtn) {
         restartBtn.addEventListener('click', function() {
@@ -43,56 +35,50 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-// --- FUNCTIE: Data ophalen van de API ---
 function startDataPolling() {
-    console.log("Polling gestart...");
-    
     setInterval(() => {
         fetch('/api/status')
             .then(response => response.json())
             .then(data => {
-                // UNCOMMENT DEZE REGEL OM TE ZIEN WAT ER BINNENKOMT:
-                // console.log("Data binnen:", data); 
-                
                 if(data.gewicht !== undefined) {
                     updateDashboard(data.gewicht);
                 }
             })
-            .catch(err => console.error("API Fout (is de server online?):", err));
-    }, 100); // Elke 0.1 seconde
+            .catch(err => console.error("API Fout:", err));
+    }, 100); 
 }
 
 function updateDashboard(weight) {
-    // Update de grote getallen op Tab 1 en Tab 2
     const weightDisplays = document.querySelectorAll('.weight-value, .clean-number');
-    
     weightDisplays.forEach(el => {
         el.innerText = weight;
     });
 }
 
-// --- FUNCTIE: JSMpeg Stream (Websocket 8080) ---
+// --- FUNCTIE: Go2rtc WebRTC Streams ---
 function startStream() {
-    if (player) return; // Draait al
+    console.log("Start Go2rtc streams...");
+    
+    // We gebruiken de dynamische host, zodat het werkt via localhost én netwerk-IP
+    const go2rtcBaseUrl = `http://${window.location.hostname}:1984/webrtc.html`;
+    
+    const wrapperBak = document.getElementById('video-wrapper-bak');
+    if (wrapperBak && !wrapperBak.innerHTML.includes('iframe')) {
+        wrapperBak.innerHTML = `<iframe src="${go2rtcBaseUrl}?src=cam_bak" frameborder="0" scrolling="no" style="width: 100%; height: 100%; pointer-events: none;"></iframe>`;
+    }
 
-    const canvas = document.getElementById('video-canvas');
-    // Verbind met de JSMpeg server op poort 8080
-    const streamUrl = 'ws://' + window.location.hostname + ':8080/';
-
-    console.log("Start JSMpeg op:", streamUrl);
-
-    player = new JSMpeg.Player(streamUrl, {
-        canvas: canvas, 
-        autoplay: true, 
-        audio: false,   
-        loop: true      
-    });
+    const wrapperCam2 = document.getElementById('video-wrapper-cam2');
+    if (wrapperCam2 && !wrapperCam2.innerHTML.includes('iframe')) {
+        wrapperCam2.innerHTML = `<iframe src="${go2rtcBaseUrl}?src=cam2" frameborder="0" scrolling="no" style="width: 100%; height: 100%; pointer-events: none;"></iframe>`;
+    }
 }
 
 function stopStream() {
-    if (player) {
-        console.log("Stream gestopt");
-        player.destroy();
-        player = null;
-    }
+    console.log("Stop streams (bespaart bandbreedte/batterij)");
+    
+    const wrapperBak = document.getElementById('video-wrapper-bak');
+    if (wrapperBak) wrapperBak.innerHTML = ''; // Verwijdert de iframe en verbreekt de WebRTC connectie
+
+    const wrapperCam2 = document.getElementById('video-wrapper-cam2');
+    if (wrapperCam2) wrapperCam2.innerHTML = '';
 }
