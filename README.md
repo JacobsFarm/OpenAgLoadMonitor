@@ -118,6 +118,76 @@ sudo apt install ffmpeg
 - [ ] **Production Architecture:** Further Optimize for performance, security, fault tolerance, and simplify the installation/upgrade process.
 - [ ] **Deployment** share ready webapp with server acces for saving feedplans and logs
 
+## Build up tree
+
+openagloadmonitor/
+├── app
+    ├── api
+        ├── __init__.py
+        └── endpoints.py
+    ├── hardware
+        └── __init__.py
+    ├── services
+        ├── __init__.py
+        ├── data_handler.py
+        ├── feed_logic.py
+        └── weight_logic.py
+    ├── vision
+        ├── __init__.py
+        ├── ocr.py
+        └── streamer.py
+    ├── web
+        ├── __init__.py
+        └── routes.py
+    └── __init__.py
+├── data
+    ├── snapshots
+    ├── config.json
+    ├── feedplan.json
+    └── history.json
+├── frontend
+    ├── public
+        └── vite.svg
+    ├── src
+        ├── assets
+            └── svelte.svg
+        ├── components
+            ├── camera.svelte
+            ├── dashboard.svelte
+            ├── lading.svelte
+            ├── navigation.svelte
+            └── settings.svelte
+        ├── lib
+            └── Counter.svelte
+        ├── app.css
+        ├── App.svelte
+        ├── global.css
+        └── main.js
+    ├── index.html
+    ├── jsconfig.json
+    ├── package-lock.json
+    ├── package.json
+    ├── README.md
+    ├── svelte.config.js
+    └── vite.config.js
+├── test
+    ├── notes
+    ├── test_image.jpg
+    └── test_video.mp4
+├── weights
+    ├── agloadmonitor.pt
+    └── NOTES.txt
+├── .gitignore.txt
+├── config.py
+├── go2rtc.exe
+├── go2rtc.yaml
+├── LICENSE
+├── README.md
+├── requirements.txt
+├── run.bat
+└── run.py
+
+
 ## 🤝 Contributing
 
 We welcome farmers and developers!
@@ -133,3 +203,5 @@ Connect me at jacobsfarmsocial@gmail.com
     Push to the Branch (git push origin feature/NewFeedLogic)
 
     Open a Pull Request
+
+
