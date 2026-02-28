@@ -112,6 +112,9 @@ sudo apt install ffmpeg
 
 - [x] **Browser Camera Integration:** Basic camera functionality operational in the browser.
 - [x] **Automated Weight Reading:** Implement digit recognition using [YOLO](https://github.com/ultralytics/ultralytics).
+- [x] **Stream handling:** Optimize stream handling for lower latency using go2rtc
+- [x] **Better webapp:** Restructure to use the Svelte compiler
+- [ ] **configuration:** Extra tabs for configuration, uploading feed plans, history
 - [ ] **Feed Plan Logic:** Develop progress tracking, dynamic component switching, and visual feedback.
 - [ ] **Feed Type Classification:** Auto-detect feed type (e.g., Grass vs. Maize) via internal camera to adjust the plan automatically.
 - [ ] **start over:** The created technical debt is unsustainable, burn the the existing repo, re-engineer the system with a architecture that makes sense
