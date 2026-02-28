@@ -64,7 +64,8 @@ function startStream() {
     
     const wrapperBak = document.getElementById('video-wrapper-bak');
     if (wrapperBak && !wrapperBak.innerHTML.includes('iframe')) {
-        wrapperBak.innerHTML = `<iframe src="${go2rtcBaseUrl}?src=cam_bak" frameborder="0" scrolling="no" style="width: 100%; height: 100%; pointer-events: none;"></iframe>`;
+        // HIER AANGEPAST: ?src=cam_bak is nu ?src=cam1 geworden!
+        wrapperBak.innerHTML = `<iframe src="${go2rtcBaseUrl}?src=cam1" frameborder="0" scrolling="no" style="width: 100%; height: 100%; pointer-events: none;"></iframe>`;
     }
 
     const wrapperCam2 = document.getElementById('video-wrapper-cam2');
