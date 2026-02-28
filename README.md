@@ -92,11 +92,13 @@ Accessing the Interface
 
     Connect your phone to the Jetson's WiFi Hotspot.
 
-    Navigate to http://192.168.x.x:5000 in your browser.
+    Navigate to http://192.168.x.x:5000 in your browser, (firefox doesn't work, chrome most stabile)
 
     Connecto to http://192.168.x.x:5000/video_feed_ocr #for seeing what the feedmonitor camera sees with yolo prediction
     Connecto to http://192.168.x.x:5000/video_feed_cam1 #for checking Camera 1 feed
     Connecto to http://192.168.x.x:5000/video_feed_cam2 #for checking Camera 2 feed
+
+Running it on a (linux) pc it can with almost zero latency on 127.0.0.1:5001 
 ```
 ---
 
