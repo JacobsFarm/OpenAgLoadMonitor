@@ -57,10 +57,10 @@ def ocr_background_worker(app_config):
         ocr_logic.init_model(app_config)
     
     # We luisteren nu naar de interne, supersnelle Go2rtc RTSP stream!
-    go2rtc_rtsp_url = "rtsp://127.0.0.1:8554/cam_bak"
+    go2rtc_rtsp_url = "rtsp://127.0.0.1:8554/cam_ocr"
     
     # Forceer de FFMPEG backend en zet de buffer op 1 voor zo min mogelijk vertraging
-    print(f"Verbinden met interne videostream: {go2rtc_rtsp_url}")
+    print(f"Verbinden met OCR videostream: {go2rtc_rtsp_url}")
     cap = cv2.VideoCapture(go2rtc_rtsp_url, cv2.CAP_FFMPEG)
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
