@@ -9,7 +9,6 @@ from app import create_app
 go2rtc_process = None
 
 def generate_go2rtc_config():
-    """Genereert automatisch go2rtc.yaml op basis van config.json"""
     config_path = 'config.json'
     if not os.path.exists(config_path):
         config_path = os.path.join('data', 'config.json')
@@ -20,25 +19,24 @@ def generate_go2rtc_config():
             
         yaml_content = "streams:\n"
         
-        # Check of we in "file" (test) modus zitten of "live" (rtsp) modus
         if config.get("VIDEO_SOURCE_TYPE") == "file":
             video_file = config.get("VIDEO_SOURCE_FILE", "test/test_video.mp4")
-            # Dit FFmpeg commando speelt de video oneindig af alsof het een live camera is
             loop_cmd = f"exec:ffmpeg -re -stream_loop -1 -i {video_file} -c:v copy -rtsp_transport tcp -f rtsp {{output}}"
-            yaml_content += f"  cam_bak: '{loop_cmd}'\n"
+            yaml_content += f"  cam1: '{loop_cmd}'\n"
             yaml_content += f"  cam2: '{loop_cmd}'\n"
+            yaml_content += f"  cam_ocr: '{loop_cmd}'\n"
         else:
-            # Gebruik de echte RTSP streams
-            yaml_content += f"  cam_bak: {config.get('RTSP_URL_1')}\n"
+            # Gebruik de specifieke URL's uit config.json
+            yaml_content += f"  cam1: {config.get('RTSP_URL_1')}\n"
             yaml_content += f"  cam2: {config.get('RTSP_URL_2')}\n"
+            yaml_content += f"  cam_ocr: {config.get('RTSP_URL_OCR')}\n"
 
-        # Schrijf het weg naar go2rtc.yaml in de hoofdmap
         with open('go2rtc.yaml', 'w') as f:
             f.write(yaml_content)
-        print("✅ go2rtc.yaml automatisch gesynchroniseerd met config.json!")
+        print("✅ go2rtc.yaml gesynchroniseerd voor 3 camera's!")
         
     except Exception as e:
-        print(f"⚠️ Kon go2rtc.yaml niet genereren: {e}")
+        print(f"⚠️ Fout: {e}")
 
 def start_go2rtc():
     """Start de go2rtc server op de achtergrond"""
@@ -84,4 +82,4 @@ if __name__ == '__main__':
     
     # 3. Start de Flask server
     # threaded=True zorgt dat de videostream de website niet blokkeert
-    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=5001, debug=False, threaded=True)
