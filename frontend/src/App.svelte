@@ -5,15 +5,19 @@
     import Lading from './components/Lading.svelte';
     import Camera from './components/Camera.svelte';
     import Settings from './components/Settings.svelte';
+    
+    // 1. Importeer je nieuwe config pagina
+    import ConfigPage from './components/config.svelte'; 
 
     // State variabelen
     let activeTab = 'dashboard-tab';
     let gewicht = 0;
-    
-    // Deze kwamen eerst uit Jinja, zorg dat je API deze nu meestuurt!
-    let stap = "Stap 1"; 
+    let stap = "Stap 1";
     let doel = 0;
     let addSecondCamera = true; // Komt normaliter uit je config
+
+    // 2. Check de huidige URL in de browser
+    let currentPath = window.location.pathname;
 
     let pollingInterval;
 
@@ -30,7 +34,8 @@
                 if (data.stap) stap = data.stap;
                 if (data.doel) doel = data.doel;
             } catch (err) {
-                console.error("API Fout:", err);
+                // Foutmelding optioneel weglaten om console spam te voorkomen
+                console.error("API Fout:", err); 
             }
         }, 100);
     });
@@ -41,15 +46,20 @@
 </script>
 
 <main class="app-wrapper">
-    <Navigation bind:activeTab />
+    {#if currentPath === '/config'}
+        <ConfigPage />
+    
+    {:else}
+        <Navigation bind:activeTab />
 
-    {#if activeTab === 'dashboard-tab'}
-        <Dashboard {gewicht} {stap} {doel} />
-    {:else if activeTab === 'numbers-tab'}
-        <Lading {gewicht} />
-    {:else if activeTab === 'stream-tab'}
-        <Camera {addSecondCamera} />
-    {:else if activeTab === 'settings-tab'}
-        <Settings />
+        {#if activeTab === 'dashboard-tab'}
+            <Dashboard {gewicht} {stap} {doel} />
+        {:else if activeTab === 'numbers-tab'}
+            <Lading {gewicht} />
+        {:else if activeTab === 'stream-tab'}
+            <Camera {addSecondCamera} />
+        {:else if activeTab === 'settings-tab'}
+            <Settings />
+        {/if}
     {/if}
 </main>
