@@ -4,11 +4,11 @@ from app.vision.streamer import generate_ocr_frames
 
 main = Blueprint('main', __name__)
 
-# Bepaal het absolute pad naar de Svelte 'dist' map.
-# Omdat dit bestand in 'app/web/' staat, gaan we twee mappen omhoog ('../../')
 FRONTEND_DIST_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend/dist'))
 
+# Vang hier zowel de homepagina (/) als de nieuwe instellingenpagina (/config) op!
 @main.route('/')
+@main.route('/config')
 def index():
     # Serveer de hoofd HTML van de Svelte app
     return send_from_directory(FRONTEND_DIST_DIR, 'index.html')
@@ -27,7 +27,6 @@ def serve_root_files(path):
     return "Bestand niet gevonden", 404
 
 # --- Route: OCR Camera (Optioneel) ---
-# Blijft behouden om in een apart tabblad te debuggen of getallen goed gelezen worden
 @main.route('/video_feed_ocr')
 def video_feed_ocr():
     return Response(generate_ocr_frames(current_app.config),
