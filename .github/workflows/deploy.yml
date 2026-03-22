@@ -1,10 +1,10 @@
 name: Build Windows Executable
 
 on:
-  workflow_dispatch: # Zorgt ervoor dat je de workflow handmatig kunt starten via de GitHub UI
+  workflow_dispatch:
   push:
     branches:
-      - main # Start automatisch bij een push naar de main branch
+      - main
 
 jobs:
   build-windows:
@@ -17,7 +17,7 @@ jobs:
       - name: Node.js instellen (voor Svelte)
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Pas aan als je een specifieke Node versie gebruikt
+          node-version: '20'
 
       - name: Frontend installeren en bouwen
         working-directory: ./frontend
@@ -28,7 +28,7 @@ jobs:
       - name: Python instellen
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11' # Pas aan naar jouw Python versie
+          python-version: '3.11' 
 
       - name: Python dependencies installeren
         run: |
@@ -38,16 +38,10 @@ jobs:
 
       - name: Bouw de .exe met PyInstaller
         run: |
-          # De pyinstaller commando's:
-          # --onefile: Maakt er één .exe van
-          # --add-binary "go2rtc.exe;.": Voegt go2rtc toe aan de hoofdmap van de exe
-          # --add-data "frontend/dist;frontend/dist": Voegt de gebouwde Svelte app toe
-          # --add-data "data;data": Voegt je data map toe (zie waarschuwing hieronder!)
-          
           pyinstaller --noconfirm --onefile --name "AgLoadMonitor" `
             --add-binary "go2rtc.exe;." `
             --add-data "frontend/dist;frontend/dist" `
-            --add-data "data;data" `
+            --add-data "weights;weights" `
             run.py
 
       - name: Upload .exe als Artifact
