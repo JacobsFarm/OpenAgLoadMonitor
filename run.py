@@ -3,17 +3,35 @@ import os
 import sys
 import subprocess
 import atexit
+import multiprocessing
 from app import create_app
 
 # Globale variabele om het go2rtc proces bij te houden
 go2rtc_process = None
 
+def get_bundled_path(relative_path):
+    """Vindt bestanden in de tijdelijke PyInstaller map (read-only)."""
+    if getattr(sys, 'frozen', False):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.abspath(relative_path)
+
+def get_persistent_path(relative_path):
+    """Vindt/maakt bestanden naast de .exe (read-write)."""
+    if getattr(sys, 'frozen', False):
+        return os.path.join(os.path.dirname(sys.executable), relative_path)
+    return os.path.abspath(relative_path)
+
 def generate_go2rtc_config():
-    config_path = 'config.json'
-    if not os.path.exists(config_path):
-        config_path = os.path.join('data', 'config.json')
+    """Zorgt ervoor dat de config lokaal naast de .exe staat."""
+    data_dir = get_persistent_path('data')
+    os.makedirs(data_dir, exist_ok=True)
+    config_path = os.path.join(data_dir, 'config.json')
         
     try:
+        if not os.path.exists(config_path):
+            with open(config_path, 'w') as f:
+                json.dump({"VIDEO_SOURCE_TYPE": "file", "VIDEO_SOURCE_FILE": "test.mp4"}, f)
+
         with open(config_path, 'r') as f:
             config = json.load(f)
             
@@ -26,35 +44,34 @@ def generate_go2rtc_config():
             yaml_content += f"  cam2: '{loop_cmd}'\n"
             yaml_content += f"  cam_ocr: '{loop_cmd}'\n"
         else:
-            # Gebruik de specifieke URL's uit config.json
-            yaml_content += f"  cam1: {config.get('RTSP_URL_1')}\n"
-            yaml_content += f"  cam2: {config.get('RTSP_URL_2')}\n"
-            yaml_content += f"  cam_ocr: {config.get('RTSP_URL_OCR')}\n"
+            yaml_content += f"  cam1: {config.get('RTSP_URL_1', '')}\n"
+            yaml_content += f"  cam2: {config.get('RTSP_URL_2', '')}\n"
+            yaml_content += f"  cam_ocr: {config.get('RTSP_URL_OCR', '')}\n"
 
-        with open('go2rtc.yaml', 'w') as f:
+        yaml_path = get_persistent_path('go2rtc.yaml')
+        with open(yaml_path, 'w') as f:
             f.write(yaml_content)
         print("✅ go2rtc.yaml gesynchroniseerd voor 3 camera's!")
         
     except Exception as e:
-        print(f"⚠️ Fout: {e}")
+        print(f"⚠️ Fout bij genereren config: {e}")
 
 def start_go2rtc():
     """Start de go2rtc server op de achtergrond"""
     global go2rtc_process
     
-    # Bepaal automatisch de juiste bestandsnaam (Windows = .exe, Linux/Jetson = zonder extensie)
-    exe_name = "go2rtc.exe" if sys.platform.startswith("win") else "./go2rtc"
+    exe_name = "go2rtc.exe" if sys.platform.startswith("win") else "go2rtc"
+    exe_path = get_bundled_path(exe_name)
     
-    # Check of het bestand wel echt in de map staat
-    if not os.path.exists(exe_name.replace("./", "")):
-        print(f"❌ WAARSCHUWING: {exe_name.replace('./', '')} niet gevonden in deze map!")
-        print("   Download het bestand en zet het naast run.py om de videostream te laten werken.")
+    if not os.path.exists(exe_path):
+        print(f"❌ WAARSCHUWING: {exe_path} niet gevonden!")
+        print("   Zorg dat go2rtc gebundeld is of in de map staat.")
         return
 
     print(f"🚀 Start {exe_name} op de achtergrond...")
     try:
-        # Start het proces op de achtergrond
-        go2rtc_process = subprocess.Popen([exe_name])
+        # cwd zorgt dat go2rtc de yaml file kan vinden die we net hebben gemaakt
+        go2rtc_process = subprocess.Popen([exe_path], cwd=get_persistent_path('.'))
         print("✅ Go2rtc draait!")
     except Exception as e:
         print(f"❌ Fout bij het starten van go2rtc: {e}")
@@ -67,13 +84,15 @@ def cleanup():
         go2rtc_process.terminate()
         go2rtc_process.wait()
 
-# Zorg dat de cleanup functie altijd draait als het script stopt (bijv. met CTRL+C)
 atexit.register(cleanup)
 
-# Initialiseer de Flask app
-app = create_app()
-
 if __name__ == '__main__':
+    # Belangrijk voor PyInstaller en Multiprocessing (zoals YOLO)
+    multiprocessing.freeze_support()
+    
+    # Initialiseer de Flask app
+    app = create_app()
+
     # 1. Update de configuratie
     generate_go2rtc_config()
     
@@ -81,5 +100,4 @@ if __name__ == '__main__':
     start_go2rtc()
     
     # 3. Start de Flask server
-    # threaded=True zorgt dat de videostream de website niet blokkeert
     app.run(host='0.0.0.0', port=5001, debug=False, threaded=True)
