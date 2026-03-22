@@ -2,6 +2,7 @@ import cv2
 import threading
 import time
 import os
+import sys
 import numpy as np
 from datetime import datetime
 import app.vision.ocr as ocr_logic
@@ -35,31 +36,37 @@ zoom_state = {
 
 # ================= UTILS =================
 
-def get_absolute_path(relative_path):
-    if os.path.isabs(relative_path):
-        return relative_path
+def get_bundled_path(relative_path):
+    if os.path.isabs(relative_path): return relative_path
+    if getattr(sys, 'frozen', False):
+        return os.path.join(sys._MEIPASS, relative_path)
     base_path = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.abspath(os.path.join(base_path, "../../"))
-    return os.path.join(project_root, relative_path)
+    return os.path.abspath(os.path.join(base_path, "../../", relative_path))
+
+def get_persistent_path(relative_path):
+    if getattr(sys, 'frozen', False):
+        return os.path.join(os.path.dirname(sys.executable), relative_path)
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    return os.path.abspath(os.path.join(base_path, "../../", relative_path))
 
 # ================= WORKERS =================
 
 def ocr_background_worker(app_config):
     print(f"--- OCR Service Started (Go2rtc RTSP) | Interval: {FRAME_SKIP_INTERVAL} ---")
     
-    snapshot_dir = get_absolute_path(os.path.join('data', 'snapshots'))
+    # Gebruik persistent path zodat de snapshots naast de .exe komen te staan
+    snapshot_dir = get_persistent_path(os.path.join('data', 'snapshots'))
     os.makedirs(snapshot_dir, exist_ok=True)
     last_snapshot_time = 0
 
     if ocr_logic.reader is None:
-        model_p = get_absolute_path(app_config.get('YOLO_MODEL_PATH'))
+        # Gebruik bundled path zodat hij het model in de exe vindt (of lokaal)
+        model_p = get_bundled_path(app_config.get('YOLO_MODEL_PATH', 'weights/yolo11n.pt'))
         app_config['YOLO_MODEL_PATH'] = model_p
         ocr_logic.init_model(app_config)
     
-    # We luisteren nu naar de interne, supersnelle Go2rtc RTSP stream!
     go2rtc_rtsp_url = "rtsp://127.0.0.1:8554/cam_ocr"
     
-    # Forceer de FFMPEG backend en zet de buffer op 1 voor zo min mogelijk vertraging
     print(f"Verbinden met OCR videostream: {go2rtc_rtsp_url}")
     cap = cv2.VideoCapture(go2rtc_rtsp_url, cv2.CAP_FFMPEG)
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -141,7 +148,6 @@ def start_ocr_thread(app_config):
     t.start()
 
 def generate_ocr_frames(app_config):
-    """Blijft behouden voor als je de OCR bounding boxes in je browser wilt debuggen via /video_feed_ocr"""
     while True:
         frame = None
         with global_state["lock"]:
