@@ -6,7 +6,7 @@
     "ADD_SECOND_CAMERA": false,
     "VIDEO_SOURCE_TYPE": "file", 
     "VIDEO_SOURCE_FILE": "test/test_video.mp4",
-    "YOLO_MODEL_PATH": "weights/Agloadmonitor.pt",
+    "YOLO_MODEL_PATH": "weights/agloadmonitor5m.pt",
+    "MODEL_DOWNLOAD_URL": "https://github.com/JacobsFarm/OpenAgLoadMonitor/releases/download/0.1.2/agloadmonitor5m.pt",
     "CONFIDENCE_THRESHOLD": 0.5
 }
-
