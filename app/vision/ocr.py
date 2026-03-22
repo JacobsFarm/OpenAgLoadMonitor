@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 from ultralytics import YOLO
-import os
 
 class DigitalReadout:
     def __init__(self, model_path):
@@ -73,6 +72,6 @@ reader = None
 
 def init_model(app_config):
     global reader
-    path = os.path.join(os.getcwd(), app_config['YOLO_MODEL_PATH'])
+    # We gebruiken direct het pad dat door streamer.py is vastgesteld (geen os.getcwd())
+    path = app_config['YOLO_MODEL_PATH']
     reader = DigitalReadout(path)
-
