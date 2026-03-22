@@ -40,7 +40,14 @@ jobs:
         run: |
           Invoke-WebRequest -Uri "https://github.com/AlexxIT/go2rtc/releases/latest/download/go2rtc_win64.zip" -OutFile "go2rtc.zip"
           Expand-Archive -Path "go2rtc.zip" -DestinationPath "."
-          Move-Item -Path "go2rtc_win64.exe" -Destination "go2rtc.exe"
+          
+          # Controleer of het bestand succesvol is uitgepakt
+          if (Test-Path "go2rtc.exe") { 
+              Write-Host "✅ go2rtc.exe is succesvol gedownload en uitgepakt!" 
+          } else {
+              Write-Error "❌ go2rtc.exe niet gevonden na uitpakken!"
+              exit 1
+          }
 
       - name: Bouw de .exe met PyInstaller
         run: |
