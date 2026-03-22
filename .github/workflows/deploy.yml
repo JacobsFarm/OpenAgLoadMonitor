@@ -55,6 +55,7 @@ jobs:
             --add-binary "go2rtc.exe;." `
             --add-data "frontend/dist;frontend/dist" `
             --add-data "weights;weights" `
+            --collect-all ultralytics `
             run.py
 
       - name: Upload .exe als Artifact
