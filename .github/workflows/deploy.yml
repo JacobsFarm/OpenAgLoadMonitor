@@ -36,6 +36,12 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
+      - name: Download go2rtc
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/AlexxIT/go2rtc/releases/latest/download/go2rtc_win64.zip" -OutFile "go2rtc.zip"
+          Expand-Archive -Path "go2rtc.zip" -DestinationPath "."
+          Move-Item -Path "go2rtc_win64.exe" -Destination "go2rtc.exe"
+
       - name: Bouw de .exe met PyInstaller
         run: |
           pyinstaller --noconfirm --onefile --name "AgLoadMonitor" `
