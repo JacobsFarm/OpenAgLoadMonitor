@@ -1,103 +1,90 @@
-import json
 import os
 import sys
+import shutil
 import subprocess
-import atexit
+import threading
+import webbrowser
 import multiprocessing
 from app import create_app
 
-# Globale variabele om het go2rtc proces bij te houden
-go2rtc_process = None
+PORT = 5001
 
-def get_bundled_path(relative_path):
-    """Vindt bestanden in de tijdelijke PyInstaller map (read-only)."""
-    if getattr(sys, 'frozen', False):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.abspath(relative_path)
+def find_browser():
+    """Zoekt een Chromium-achtige browser (Chrome/Chromium/Edge) voor kiosk-modus."""
+    candidates = []
+    if sys.platform.startswith("win"):
+        local = os.environ.get("LOCALAPPDATA", "")
+        pf = os.environ.get("PROGRAMFILES", r"C:\Program Files")
+        pf86 = os.environ.get("PROGRAMFILES(X86)", r"C:\Program Files (x86)")
+        candidates = [
+            os.path.join(pf, r"Google\Chrome\Application\chrome.exe"),
+            os.path.join(pf86, r"Google\Chrome\Application\chrome.exe"),
+            os.path.join(local, r"Google\Chrome\Application\chrome.exe"),
+            os.path.join(pf86, r"Microsoft\Edge\Application\msedge.exe"),
+            os.path.join(pf, r"Microsoft\Edge\Application\msedge.exe"),
+        ]
+    else:
+        for name in ("google-chrome", "google-chrome-stable", "chromium",
+                     "chromium-browser", "microsoft-edge"):
+            found = shutil.which(name)
+            if found:
+                candidates.append(found)
 
-def get_persistent_path(relative_path):
-    """Vindt/maakt bestanden naast de .exe (read-write)."""
-    if getattr(sys, 'frozen', False):
-        return os.path.join(os.path.dirname(sys.executable), relative_path)
-    return os.path.abspath(relative_path)
+    for path in candidates:
+        if path and os.path.exists(path):
+            return path
+    return None
 
-def generate_go2rtc_config():
-    """Zorgt ervoor dat de config lokaal naast de .exe staat."""
-    data_dir = get_persistent_path('data')
-    os.makedirs(data_dir, exist_ok=True)
-    config_path = os.path.join(data_dir, 'config.json')
-        
+def launch_kiosk(url):
+    """Start de browser schermvullend zonder adresbalk (wagenscherm)."""
+    browser = find_browser()
+    if not browser:
+        print("⚠️ Geen Chrome/Chromium/Edge gevonden voor kiosk-modus.")
+        return False
+
+    # Aparte profielmap voorkomt 'herstel sessie'-popups op het vaste scherm
+    profile = os.path.join(os.path.expanduser("~"), ".agloadmonitor-kiosk")
     try:
-        if not os.path.exists(config_path):
-            with open(config_path, 'w') as f:
-                json.dump({"VIDEO_SOURCE_TYPE": "file", "VIDEO_SOURCE_FILE": "test.mp4"}, f)
-
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-            
-        yaml_content = "streams:\n"
-        
-        if config.get("VIDEO_SOURCE_TYPE") == "file":
-            video_file = config.get("VIDEO_SOURCE_FILE", "test/test_video.mp4")
-            loop_cmd = f"exec:ffmpeg -re -stream_loop -1 -i {video_file} -c:v copy -rtsp_transport tcp -f rtsp {{output}}"
-            yaml_content += f"  cam1: '{loop_cmd}'\n"
-            yaml_content += f"  cam2: '{loop_cmd}'\n"
-            yaml_content += f"  cam_ocr: '{loop_cmd}'\n"
-        else:
-            yaml_content += f"  cam1: {config.get('RTSP_URL_1', '')}\n"
-            yaml_content += f"  cam2: {config.get('RTSP_URL_2', '')}\n"
-            yaml_content += f"  cam_ocr: {config.get('RTSP_URL_OCR', '')}\n"
-
-        yaml_path = get_persistent_path('go2rtc.yaml')
-        with open(yaml_path, 'w') as f:
-            f.write(yaml_content)
-        print("✅ go2rtc.yaml gesynchroniseerd voor 3 camera's!")
-        
+        subprocess.Popen([
+            browser,
+            f"--app={url}",
+            "--kiosk",
+            "--start-fullscreen",
+            "--noerrdialogs",
+            "--disable-infobars",
+            "--no-first-run",
+            "--disable-session-crashed-bubble",
+            f"--user-data-dir={profile}",
+        ])
+        return True
     except Exception as e:
-        print(f"⚠️ Fout bij genereren config: {e}")
+        print(f"⚠️ Kon kiosk-browser niet starten: {e}")
+        return False
 
-def start_go2rtc():
-    """Start de go2rtc server op de achtergrond"""
-    global go2rtc_process
-    
-    exe_name = "go2rtc.exe" if sys.platform.startswith("win") else "go2rtc"
-    exe_path = get_bundled_path(exe_name)
-    
-    if not os.path.exists(exe_path):
-        print(f"❌ WAARSCHUWING: {exe_path} niet gevonden!")
-        print("   Zorg dat go2rtc gebundeld is of in de map staat.")
+def open_interface(kiosk):
+    """Open de webinterface op het device: kiosk indien gewenst, anders gewone browser."""
+    url = f"http://localhost:{PORT}"
+    if kiosk and launch_kiosk(url):
+        print("🖥️  Kiosk-modus gestart")
         return
-
-    print(f"🚀 Start {exe_name} op de achtergrond...")
     try:
-        # cwd zorgt dat go2rtc de yaml file kan vinden die we net hebben gemaakt
-        go2rtc_process = subprocess.Popen([exe_path], cwd=get_persistent_path('.'))
-        print("✅ Go2rtc draait!")
+        webbrowser.open(url)
     except Exception as e:
-        print(f"❌ Fout bij het starten van go2rtc: {e}")
-
-def cleanup():
-    """Zorgt ervoor dat go2rtc netjes afsluit als je de Python server stopt"""
-    global go2rtc_process
-    if go2rtc_process is not None:
-        print("\n🛑 Go2rtc proces netjes afsluiten...")
-        go2rtc_process.terminate()
-        go2rtc_process.wait()
-
-atexit.register(cleanup)
+        print(f"⚠️ Kon de browser niet automatisch openen: {e}")
 
 if __name__ == '__main__':
     # Belangrijk voor PyInstaller en Multiprocessing (zoals YOLO)
     multiprocessing.freeze_support()
-    
-    # Initialiseer de Flask app
+
+    # Initialiseer de Flask app (start ook de OCR- en camera-threads)
     app = create_app()
 
-    # 1. Update de configuratie
-    generate_go2rtc_config()
-    
-    # 2. Start Go2rtc op de achtergrond
-    start_go2rtc()
-    
-    # 3. Start de Flask server
-    app.run(host='0.0.0.0', port=5001, debug=False, threaded=True)
+    kiosk = bool(app.config.get("KIOSK_MODE", False))
+    auto_open = bool(app.config.get("AUTO_OPEN_BROWSER", True))
+
+    # Open de interface kort nadat de server is opgestart
+    if auto_open:
+        threading.Timer(2.0, open_interface, args=(kiosk,)).start()
+
+    # Start de Flask server (cameras worden als MJPEG geserveerd, geen go2rtc meer nodig)
+    app.run(host='0.0.0.0', port=PORT, debug=False, threaded=True)

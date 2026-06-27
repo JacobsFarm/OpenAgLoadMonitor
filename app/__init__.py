@@ -2,12 +2,37 @@ import os
 import json
 from flask import Flask
 
+DEFAULT_CONFIG = {
+    "SECRET_KEY": "change-me",
+    "RTSP_URL_1": "",
+    "RTSP_URL_2": "",
+    "RTSP_URL_OCR": "",
+    "ADD_SECOND_CAMERA": False,
+    "VIDEO_SOURCE_TYPE": "file",
+    "VIDEO_SOURCE_FILE": "test/test_video.mp4",
+    "YOLO_MODEL_PATH": "weights/agloadmonitor5m.pt",
+    "MODEL_DOWNLOAD_URL": "https://github.com/JacobsFarm/OpenAgLoadMonitor/releases/download/0.1.2/agloadmonitor5m.pt",
+    "CONFIDENCE_THRESHOLD": 0.5,
+    "STREAM_LAYOUT": "vertical",
+    "AUTO_OPEN_BROWSER": True,
+    "KIOSK_MODE": False
+}
+
+def ensure_config(config_path):
+    """Maakt een standaard config.json aan als die nog niet bestaat (bv. eerste start van de exe)."""
+    if not os.path.exists(config_path):
+        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+        with open(config_path, 'w') as f:
+            json.dump(DEFAULT_CONFIG, f, indent=4)
+        print(f"ℹ️ Standaard config.json aangemaakt op {config_path}")
+
 def create_app():
     app = Flask(__name__)
-    
-    # 1. Config Laden
+
+    # 1. Config Laden (default aanmaken indien nodig)
     base_dir = os.getcwd()
     config_path = os.path.join(base_dir, 'data', 'config.json')
+    ensure_config(config_path)
     try:
         with open(config_path, 'r') as f:
             app.config.update(json.load(f))
@@ -17,18 +42,16 @@ def create_app():
     # 2. Blueprints
     from app.web.routes import main
     app.register_blueprint(main)
-    
+
     from app.api.endpoints import api
     app.register_blueprint(api, url_prefix='/api')
 
-    # 3. START DE ACHTERGROND OCR THREAD (NIEUW)
-    from app.vision.streamer import start_ocr_thread
-    # We doen dit alleen als we niet in 'debug reloader' modus zitten
-    # (anders start hij 2x op in development), of gewoon simpel checken:
-    if os.environ.get('WERKZEUG_RUN_MAIN') or __name__ == 'app': 
-         # Let op: bij simpele run.py werkt dit soms direct, 
-         # anders gewoon: start_ocr_thread(app.config)
-         print("Starten van OCR services...")
-         start_ocr_thread(app.config)
+    # 3. Start de achtergrond-threads (OCR + camera passthrough)
+    from app.vision.streamer import start_ocr_thread, start_camera_threads
+    # Alleen starten in het hoofdproces (niet in de debug-reloader child)
+    if os.environ.get('WERKZEUG_RUN_MAIN') or __name__ == 'app':
+        print("Starten van OCR- en camera-services...")
+        start_ocr_thread(app.config)
+        start_camera_threads(app.config)
 
     return app

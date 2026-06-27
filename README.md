@@ -68,11 +68,11 @@ Instead of standard OCR (which struggles with digital screens in sunlight), we u
 ### Prerequisites
 * Python 3.10
 * Ultralytics (`pip install ultralytics`)
-* Flask or Django (for the web server)
-* OpenCV (`cv2`)
-* winget install "Gyan.FFmpeg"
-* go2rtc.exe downloadable from https://github.com/AlexxIT/go2rtc
-* **The frontend is Built with SvelteKit.
+* Flask (for the web server)
+* OpenCV (`opencv-python-headless`, includes the FFmpeg backend for RTSP)
+* **The frontend is Built with Svelte/Vite.
+
+> Note: go2rtc and a separate FFmpeg install are no longer required. Camera feeds are decoded by OpenCV and served directly as MJPEG by Flask, so the app ships as a single self-contained executable (Windows & Linux).
 
 ### Running the Server
 ```bash
@@ -92,13 +92,15 @@ Accessing the Interface
 
     Connect your phone to the Jetson's WiFi Hotspot.
 
-    Navigate to http://192.168.x.x:5000 in your browser, (firefox doesn't work, chrome most stabile)
+    The app starts on port 5001 and opens the browser automatically on the device.
 
-    Connecto to http://192.168.x.x:5000/video_feed_ocr #for seeing what the feedmonitor camera sees with yolo prediction
-    Connecto to http://192.168.x.x:5000/video_feed_cam1 #for checking Camera 1 feed
-    Connecto to http://192.168.x.x:5000/video_feed_cam2 #for checking Camera 2 feed
+    Navigate to http://192.168.x.x:5001 in your browser (chrome most stabile)
 
-Running it on a (linux) pc it can with almost zero latency on 127.0.0.1:5001 
+    http://192.168.x.x:5001/video_feed_ocr  #feedmonitor camera with yolo prediction
+    http://192.168.x.x:5001/video_feed_cam1 #Camera 1 feed (MJPEG)
+    http://192.168.x.x:5001/video_feed_cam2 #Camera 2 feed (MJPEG)
+
+Locally on the device (http://localhost:5001) latency is lowest; over the network it lags slightly more.
 ```
 ---
 
@@ -112,7 +114,7 @@ sudo apt install ffmpeg
 
 - [x] **Browser Camera Integration:** Basic camera functionality operational in the browser.
 - [x] **Automated Weight Reading:** Implement digit recognition using [YOLO](https://github.com/ultralytics/ultralytics).
-- [x] **Stream handling:** Optimize stream handling for lower latency using go2rtc
+- [x] **Stream handling:** Cameras served as MJPEG directly from OpenCV/Flask (go2rtc removed for single-binary builds)
 - [x] **Better webapp:** Restructure to use the Svelte compiler
 - [ ] **configuration:** Extra tabs for configuration, uploading feed plans, history
 - [ ] **Feed Plan Logic:** Develop progress tracking, dynamic component switching, and visual feedback.

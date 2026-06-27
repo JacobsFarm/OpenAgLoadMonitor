@@ -1,7 +1,7 @@
 from flask import Blueprint, Response, current_app, send_from_directory
 import os
 import sys
-from app.vision.streamer import generate_ocr_frames
+from app.vision.streamer import generate_ocr_frames, generate_camera_frames
 
 main = Blueprint('main', __name__)
 
@@ -32,4 +32,14 @@ def serve_root_files(path):
 @main.route('/video_feed_ocr')
 def video_feed_ocr():
     return Response(generate_ocr_frames(current_app.config),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@main.route('/video_feed_cam1')
+def video_feed_cam1():
+    return Response(generate_camera_frames('cam1'),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@main.route('/video_feed_cam2')
+def video_feed_cam2():
+    return Response(generate_camera_frames('cam2'),
                     mimetype='multipart/x-mixed-replace; boundary=frame')

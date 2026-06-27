@@ -18,7 +18,7 @@
         "dahua": "/cam/realmonitor?channel=1&subtype=1",
         "uniview": "/media/video1",
         "tapo": "/stream2",
-        "custom": "" 
+        "custom": ""
     };
 
     let cam1 = { user: 'admin', pass: '', ip: '', brand: 'hikvision', path: '' };
@@ -32,9 +32,9 @@
             camObj.user = urlParts.username || 'admin';
             camObj.pass = urlParts.password || '';
             camObj.ip = urlParts.hostname || '';
-            
+
             let fullPath = urlParts.pathname + urlParts.search;
-            
+
             camObj.brand = 'custom';
             camObj.path = fullPath;
             for (const [merk, pad] of Object.entries(cameraBrands)) {
@@ -54,7 +54,7 @@
         if (!camObj.ip) return "";
         let finalPath = camObj.brand === 'custom' ? camObj.path : cameraBrands[camObj.brand];
         if (!finalPath.startsWith('/')) finalPath = '/' + finalPath;
-        
+
         return `rtsp://${camObj.user}:${camObj.pass}@${camObj.ip}:554${finalPath}`;
     }
 
@@ -66,7 +66,7 @@
                 parseRtspUrl(configData.RTSP_URL_1, cam1);
                 parseRtspUrl(configData.RTSP_URL_2, cam2);
                 parseRtspUrl(configData.RTSP_URL_OCR, camOCR);
-                cam1 = cam1; cam2 = cam2; camOCR = camOCR; 
+                cam1 = cam1; cam2 = cam2; camOCR = camOCR;
             }
         } catch (error) {
             console.error("Netwerkfout:", error);
@@ -86,7 +86,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(configData)
             });
-            
+
             if (res.ok) {
                 isError = false;
                 saveMessage = '✅ Instellingen succesvol opgeslagen!';
@@ -105,7 +105,7 @@
 
 <div class="tab-content active">
     <div class="card" style="max-width: 900px; margin: 0 auto; display: block;">
-        
+
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
             <h2 style="color: var(--text-main); margin: 0;">Systeem Configuratie</h2>
             <button class="action-btn secondary" style="padding: 10px 15px; font-size: 1rem;" on:click={goBack}>
@@ -117,16 +117,16 @@
             <p class="status-text">Gegevens inladen...</p>
         {:else}
             <form on:submit|preventDefault={saveConfig}>
-                
+
                 <div class="cam-block">
                     <div class="card-header">Camera 1 (Voerweegschaal)</div>
                     <div class="grid-2-col">
-                        <div class="form-group">
-                            <label>IP Adres</label>
+                        <label class="form-group">
+                            <span>IP Adres</span>
                             <input type="text" bind:value={cam1.ip} placeholder="192.168..." />
-                        </div>
-                        <div class="form-group">
-                            <label>Cameramerk</label>
+                        </label>
+                        <label class="form-group">
+                            <span>Cameramerk</span>
                             <select bind:value={cam1.brand}>
                                 <option value="hikvision">Hikvision / Safire (Sub-stream)</option>
                                 <option value="hikvision_main">Hikvision / Safire (Main-stream)</option>
@@ -135,66 +135,66 @@
                                 <option value="tapo">TP-Link Tapo</option>
                                 <option value="custom">Overig / Handmatig</option>
                             </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Gebruikersnaam</label>
+                        </label>
+                        <label class="form-group">
+                            <span>Gebruikersnaam</span>
                             <input type="text" bind:value={cam1.user} />
-                        </div>
-                        <div class="form-group">
-                            <label>Wachtwoord</label>
-                            <input 
-                                type={showPass1 ? "text" : "password"} 
-                                bind:value={cam1.pass} 
+                        </label>
+                        <label class="form-group">
+                            <span>Wachtwoord</span>
+                            <input
+                                type={showPass1 ? "text" : "password"}
+                                bind:value={cam1.pass}
                                 on:focus={() => showPass1 = true}
                                 on:blur={() => showPass1 = false}
-                                placeholder="***" 
+                                placeholder="***"
                             />
-                        </div>
+                        </label>
                     </div>
                     {#if cam1.brand === 'custom'}
-                        <div class="form-group" style="margin-top: 10px;">
-                            <label>Aangepast Stream Pad (bijv. /h264Preview_01_sub)</label>
+                        <label class="form-group" style="margin-top: 10px;">
+                            <span>Aangepast Stream Pad (bijv. /h264Preview_01_sub)</span>
                             <input type="text" bind:value={cam1.path} />
-                        </div>
+                        </label>
                     {/if}
                 </div>
 
                 <div class="cam-block">
                     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <span>Camera 2 (Optioneel)</span>
-                        <div class="checkbox-group" style="margin-top: 0;">
-                            <input type="checkbox" id="add_second_cam" bind:checked={configData.ADD_SECOND_CAMERA} />
-                            <label for="add_second_cam" style="margin-bottom: 0;">Activeren</label>
-                        </div>
+                        <label class="checkbox-group" style="margin-top: 0;">
+                            <input type="checkbox" bind:checked={configData.ADD_SECOND_CAMERA} />
+                            <span style="margin-bottom: 0;">Activeren</span>
+                        </label>
                     </div>
                     {#if configData.ADD_SECOND_CAMERA}
                         <div class="grid-2-col">
-                            <div class="form-group">
-                                <label>IP Adres</label>
+                            <label class="form-group">
+                                <span>IP Adres</span>
                                 <input type="text" bind:value={cam2.ip} placeholder="192.168..." />
-                            </div>
-                            <div class="form-group">
-                                <label>Cameramerk</label>
+                            </label>
+                            <label class="form-group">
+                                <span>Cameramerk</span>
                                 <select bind:value={cam2.brand}>
                                     <option value="hikvision">Hikvision / Safire</option>
                                     <option value="dahua">Dahua</option>
                                     <option value="custom">Handmatig</option>
                                 </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Gebruikersnaam</label>
+                            </label>
+                            <label class="form-group">
+                                <span>Gebruikersnaam</span>
                                 <input type="text" bind:value={cam2.user} />
-                            </div>
-                            <div class="form-group">
-                                <label>Wachtwoord</label>
-                                <input 
-                                    type={showPass2 ? "text" : "password"} 
-                                    bind:value={cam2.pass} 
+                            </label>
+                            <label class="form-group">
+                                <span>Wachtwoord</span>
+                                <input
+                                    type={showPass2 ? "text" : "password"}
+                                    bind:value={cam2.pass}
                                     on:focus={() => showPass2 = true}
                                     on:blur={() => showPass2 = false}
-                                    placeholder="***" 
+                                    placeholder="***"
                                 />
-                            </div>
+                            </label>
                         </div>
                     {/if}
                 </div>
@@ -202,54 +202,65 @@
                 <div class="cam-block">
                     <div class="card-header">Camera OCR (Display Uitlezing)</div>
                     <div class="grid-2-col">
-                        <div class="form-group">
-                            <label>IP Adres</label>
+                        <label class="form-group">
+                            <span>IP Adres</span>
                             <input type="text" bind:value={camOCR.ip} placeholder="192.168..." />
-                        </div>
-                        <div class="form-group">
-                            <label>Cameramerk</label>
+                        </label>
+                        <label class="form-group">
+                            <span>Cameramerk</span>
                             <select bind:value={camOCR.brand}>
                                 <option value="hikvision">Hikvision / Safire</option>
                                 <option value="dahua">Dahua</option>
                                 <option value="custom">Handmatig</option>
                             </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Gebruikersnaam</label>
+                        </label>
+                        <label class="form-group">
+                            <span>Gebruikersnaam</span>
                             <input type="text" bind:value={camOCR.user} />
-                        </div>
-                        <div class="form-group">
-                            <label>Wachtwoord</label>
-                            <input 
-                                type={showPassOCR ? "text" : "password"} 
-                                bind:value={camOCR.pass} 
+                        </label>
+                        <label class="form-group">
+                            <span>Wachtwoord</span>
+                            <input
+                                type={showPassOCR ? "text" : "password"}
+                                bind:value={camOCR.pass}
                                 on:focus={() => showPassOCR = true}
                                 on:blur={() => showPassOCR = false}
-                                placeholder="***" 
+                                placeholder="***"
                             />
-                        </div>
+                        </label>
                     </div>
                 </div>
 
                 <div class="card-header" style="margin-top: 30px;">Systeem & Video Modus</div>
                 <div class="grid-2-col">
-                    <div class="form-group">
-                        <label>Video Bron Type</label>
+                    <label class="form-group">
+                        <span>Video Bron Type</span>
                         <select bind:value={configData.VIDEO_SOURCE_TYPE}>
                             <option value="file">Lokaal Bestand (.mp4 test)</option>
                             <option value="stream">Live Netwerk Stream (RTSP)</option>
                         </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Confidence Threshold (0.0 - 1.0)</label>
+                    </label>
+                    <label class="form-group">
+                        <span>Confidence Threshold (0.0 - 1.0)</span>
                         <input type="number" step="0.05" min="0" max="1" bind:value={configData.CONFIDENCE_THRESHOLD} />
-                    </div>
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <label class="checkbox-group">
+                        <input type="checkbox" bind:checked={configData.AUTO_OPEN_BROWSER} />
+                        <span>Browser automatisch openen bij opstart</span>
+                    </label>
+                    <label class="checkbox-group">
+                        <input type="checkbox" bind:checked={configData.KIOSK_MODE} />
+                        <span>Kiosk-modus (schermvullend, voor het wagenscherm)</span>
+                    </label>
                 </div>
 
                 <div class="actions-container" style="margin-top: 30px;">
                     <button type="submit" class="action-btn primary">Instellingen Opslaan</button>
                 </div>
-                
+
                 {#if saveMessage}
                     <p class="status-text" style="margin-top: 20px; color: {isError ? '#e74c3c' : 'var(--accent-green)'}; text-align: center; font-weight: bold;">
                         {saveMessage}
@@ -281,17 +292,20 @@
         }
     }
 
-    .form-group { display: flex; flex-direction: column; }
-    
-    .checkbox-group { display: flex; align-items: center; gap: 8px; }
+    /* Label omhult nu de control (toegankelijk) en blijft verticaal stapelen */
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+    .checkbox-group { display: flex; align-items: center; gap: 8px; cursor: pointer; }
     .checkbox-group input { width: 18px; height: 18px; cursor: pointer; }
-    
-    label {
+
+    .toggle-row { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; }
+    .toggle-row .checkbox-group span { color: var(--text-muted); font-size: 0.9rem; }
+
+    .form-group > span {
         color: var(--text-muted);
-        margin-bottom: 6px;
         font-size: 0.9rem;
     }
-    
+
     input[type="text"], input[type="password"], input[type="number"], select {
         width: 100%;
         padding: 10px 12px;
@@ -302,7 +316,7 @@
         font-size: 0.95rem;
         font-family: inherit;
     }
-    
+
     input:focus, select:focus {
         outline: none;
         border-color: var(--accent-green);

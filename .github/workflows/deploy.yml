@@ -1,4 +1,4 @@
-name: Build Windows Executable
+name: Build Executables
 
 on:
   workflow_dispatch:
@@ -28,37 +28,21 @@ jobs:
       - name: Python instellen
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11' 
+          python-version: '3.11'
 
       - name: Python dependencies installeren
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          # Forceer de installatie van alle cruciale pakketten direct in de action
-          pip install pyinstaller ultralytics flask websockets opencv-python-headless numpy
-
-      - name: Download go2rtc
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/AlexxIT/go2rtc/releases/latest/download/go2rtc_win64.zip" -OutFile "go2rtc.zip"
-          Expand-Archive -Path "go2rtc.zip" -DestinationPath "."
-          
-          # Controleer of het bestand succesvol is uitgepakt
-          if (Test-Path "go2rtc.exe") { 
-              Write-Host "✅ go2rtc.exe is succesvol gedownload en uitgepakt!" 
-          } else {
-              Write-Error "❌ go2rtc.exe niet gevonden na uitpakken!"
-              exit 1
-          }
+          pip install pyinstaller
 
       - name: Bouw de .exe met PyInstaller
         run: |
           pyinstaller --noconfirm --onefile --name "AgLoadMonitor" `
-            --add-binary "go2rtc.exe;." `
             --add-data "frontend/dist;frontend/dist" `
             --collect-all ultralytics `
             --collect-all flask `
             --hidden-import flask `
-            --hidden-import websockets `
             run.py
 
       - name: Upload .exe als Artifact
@@ -66,3 +50,47 @@ jobs:
         with:
           name: AgLoadMonitor-Windows
           path: dist/AgLoadMonitor.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code ophalen
+        uses: actions/checkout@v4
+
+      - name: Node.js instellen (voor Svelte)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Frontend installeren en bouwen
+        working-directory: ./frontend
+        run: |
+          npm install
+          npm run build
+
+      - name: Python instellen
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Python dependencies installeren
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Bouw de Linux-binary met PyInstaller
+        run: |
+          pyinstaller --noconfirm --onefile --name "AgLoadMonitor" \
+            --add-data "frontend/dist:frontend/dist" \
+            --collect-all ultralytics \
+            --collect-all flask \
+            --hidden-import flask \
+            run.py
+
+      - name: Upload Linux-binary als Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AgLoadMonitor-Linux
+          path: dist/AgLoadMonitor
