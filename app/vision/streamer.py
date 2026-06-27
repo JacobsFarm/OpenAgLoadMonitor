@@ -130,8 +130,10 @@ def ocr_background_worker(app_config):
     last_snapshot_time = 0
 
     if ocr_logic.reader is None:
-        # Gebruik bundled path zodat hij het model in de exe vindt (of lokaal)
-        model_p = get_bundled_path(app_config.get('YOLO_MODEL_PATH', 'weights/yolo11n.pt'))
+        # Het model wordt NIET in de exe gebundeld maar bij de eerste start
+        # gedownload naast de exe (zie config.py / MODEL_DOWNLOAD_URL). Gebruik
+        # daarom het persistente pad, niet het tijdelijke bundle-pad.
+        model_p = get_persistent_path(app_config.get('YOLO_MODEL_PATH', 'weights/agloadmonitor5m.pt'))
         app_config['YOLO_MODEL_PATH'] = model_p
         ocr_logic.init_model(app_config)
 

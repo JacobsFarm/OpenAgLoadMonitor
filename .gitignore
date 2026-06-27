@@ -53,6 +53,11 @@ test/test_video.mp4
 *.mp4
 *.mov
 
+# --- Model weights (downloaded at runtime via MODEL_DOWNLOAD_URL) ---
+# Het YOLO-model wordt bij de eerste start gedownload, niet in git bewaard.
+weights/*.pt
+*.pt
+
 # --- IDE Settings (Optional but Recommended) ---
 .vscode/*
 !.vscode/extensions.json
