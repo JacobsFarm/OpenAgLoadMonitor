@@ -4,10 +4,12 @@ from flask import Flask
 
 DEFAULT_CONFIG = {
     "SECRET_KEY": "change-me",
-    "RTSP_URL_1": "",
-    "RTSP_URL_2": "",
+    "CAMERAS": [
+        {"name": "Camera 1", "url": ""}
+    ],
     "RTSP_URL_OCR": "",
-    "ADD_SECOND_CAMERA": False,
+    "OCR_ENABLED": True,
+    "SHOW_OCR_IN_CAMERAS": False,
     "VIDEO_SOURCE_TYPE": "file",
     "VIDEO_SOURCE_FILE": "test/test_video.mp4",
     "YOLO_MODEL_PATH": "weights/agloadmonitor5m.pt",
@@ -50,8 +52,11 @@ def create_app():
     from app.vision.streamer import start_ocr_thread, start_camera_threads
     # Alleen starten in het hoofdproces (niet in de debug-reloader child)
     if os.environ.get('WERKZEUG_RUN_MAIN') or __name__ == 'app':
-        print("Starten van OCR- en camera-services...")
-        start_ocr_thread(app.config)
+        if app.config.get('OCR_ENABLED', True):
+            print("Starten van OCR- en camera-services...")
+            start_ocr_thread(app.config)
+        else:
+            print("OCR uitgeschakeld (OCR_ENABLED=false) — alleen camera-services starten.")
         start_camera_threads(app.config)
 
     return app

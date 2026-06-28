@@ -10,8 +10,7 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:5001',
       '/video_feed_ocr': 'http://localhost:5001',
-      '/video_feed_cam1': 'http://localhost:5001',
-      '/video_feed_cam2': 'http://localhost:5001',
+      '/video_feed_cam': 'http://localhost:5001',
     },
   },
 })

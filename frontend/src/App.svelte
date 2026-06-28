@@ -1,10 +1,10 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
-    import Navigation from './components/Navigation.svelte';
-    import Dashboard from './components/Dashboard.svelte';
-    import Lading from './components/Lading.svelte';
-    import Camera from './components/Camera.svelte';
-    import Settings from './components/Settings.svelte';
+    import Navigation from './components/navigation.svelte';
+    import Dashboard from './components/dashboard.svelte';
+    import Lading from './components/lading.svelte';
+    import Camera from './components/camera.svelte';
+    import Settings from './components/settings.svelte';
     
     // 1. Importeer je nieuwe config pagina
     import ConfigPage from './components/config.svelte'; 
@@ -14,7 +14,6 @@
     let gewicht = 0;
     let stap = "Stap 1";
     let doel = 0;
-    let addSecondCamera = true; // Komt normaliter uit je config
 
     // 2. Check de huidige URL in de browser
     let currentPath = window.location.pathname;
@@ -57,7 +56,7 @@
         {:else if activeTab === 'numbers-tab'}
             <Lading {gewicht} />
         {:else if activeTab === 'stream-tab'}
-            <Camera {addSecondCamera} />
+            <Camera />
         {:else if activeTab === 'settings-tab'}
             <Settings />
         {/if}

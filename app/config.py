@@ -50,20 +50,24 @@ class Config:
 
 # ---> Automatische Download Logica <---
 # Zodra dit bestand wordt geïmporteerd (bijv. bij het opstarten van de app),
-# voeren we deze check uit.
+# voeren we deze check uit. Staat OCR uit (bijv. op de opraapwagen), dan is het
+# YOLO-model niet nodig en slaan we de (zware) download over.
 
-os.makedirs(Config.WEIGHTS_FOLDER, exist_ok=True)
-
-if not os.path.exists(Config.MODEL_PATH):
-    print(f"YOLO model niet gevonden lokaal. Start download naar: {Config.MODEL_PATH} ...")
-    if Config.MODEL_DOWNLOAD_URL:
-        try:
-            print(f"Downloaden vanaf: {Config.MODEL_DOWNLOAD_URL}")
-            urllib.request.urlretrieve(Config.MODEL_DOWNLOAD_URL, Config.MODEL_PATH)
-            print("✅ Model succesvol gedownload!")
-        except Exception as e:
-            print(f"❌ Fout tijdens het downloaden van model: {e}")
-    else:
-        print("❌ Fout: Geen MODEL_DOWNLOAD_URL geconfigureerd in config.json of default.")
+if not Config._data.get('OCR_ENABLED', True):
+    print("ℹ️ OCR uitgeschakeld — YOLO-model wordt niet gedownload of geladen.")
 else:
-    print(f"✅ YOLO model lokaal gevonden op: {Config.MODEL_PATH}")
+    os.makedirs(Config.WEIGHTS_FOLDER, exist_ok=True)
+
+    if not os.path.exists(Config.MODEL_PATH):
+        print(f"YOLO model niet gevonden lokaal. Start download naar: {Config.MODEL_PATH} ...")
+        if Config.MODEL_DOWNLOAD_URL:
+            try:
+                print(f"Downloaden vanaf: {Config.MODEL_DOWNLOAD_URL}")
+                urllib.request.urlretrieve(Config.MODEL_DOWNLOAD_URL, Config.MODEL_PATH)
+                print("✅ Model succesvol gedownload!")
+            except Exception as e:
+                print(f"❌ Fout tijdens het downloaden van model: {e}")
+        else:
+            print("❌ Fout: Geen MODEL_DOWNLOAD_URL geconfigureerd in config.json of default.")
+    else:
+        print(f"✅ YOLO model lokaal gevonden op: {Config.MODEL_PATH}")

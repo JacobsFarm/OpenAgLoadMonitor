@@ -1,22 +1,50 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
-    export let addSecondCamera;
 
     // 'vertical' = onder elkaar, 'horizontal' = naast elkaar, 'grid' = raster
     let layout = 'vertical';
     let showStreams = true;
 
+    // Lijst met kijk-camera's, opgebouwd uit de config: [{ key, label }, ...]
+    let cams = [];
+
     // Per camera een cache-buster (om de MJPEG-<img> te herladen) en verbindingsstatus
-    let bust = { cam1: Date.now(), cam2: Date.now() };
-    let connected = { cam1: null, cam2: null }; // null = nog onbekend
+    let bust = {};
+    let connected = {}; // per key: null = nog onbekend, true/false = (niet) verbonden
     let backendReachable = true;
 
     let statusTimer;
 
-    $: cams = [
-        { key: 'cam1', label: 'Cam 1 · Bak' },
-        ...(addSecondCamera ? [{ key: 'cam2', label: 'Cam 2 · Overzicht' }] : []),
-    ];
+    // Bouw de camera-lijst uit de config (nieuw CAMERAS-array of oude losse keys).
+    function buildCams(cfg) {
+        let list;
+        if (Array.isArray(cfg.CAMERAS) && cfg.CAMERAS.length) {
+            list = cfg.CAMERAS.map((c, i) => ({
+                key: `cam${i + 1}`,
+                label: c.name || `Cam ${i + 1}`,
+                src: `/video_feed_cam/cam${i + 1}`,
+            }));
+        } else {
+            // Backward compatible met de oude config
+            list = [{ key: 'cam1', label: 'Cam 1 · Bak', src: '/video_feed_cam/cam1' }];
+            if (cfg.ADD_SECOND_CAMERA) {
+                list.push({ key: 'cam2', label: 'Cam 2 · Overzicht', src: '/video_feed_cam/cam2' });
+            }
+        }
+
+        // OCR-camera optioneel ook als tegel tonen.
+        // Met OCR aan: geannoteerd beeld (/video_feed_ocr).
+        // Met OCR uit: rauwe passthrough (/video_feed_cam/cam_ocr).
+        if (cfg.SHOW_OCR_IN_CAMERAS) {
+            const ocrOn = cfg.OCR_ENABLED !== false;
+            list.push({
+                key: 'cam_ocr',
+                label: ocrOn ? 'OCR · Display' : 'OCR-camera',
+                src: ocrOn ? '/video_feed_ocr' : '/video_feed_cam/cam_ocr',
+            });
+        }
+        return list;
+    }
 
     async function loadConfig() {
         try {
@@ -24,7 +52,17 @@
             if (res.ok) {
                 const cfg = await res.json();
                 if (cfg.STREAM_LAYOUT) layout = cfg.STREAM_LAYOUT;
-                if (cfg.ADD_SECOND_CAMERA !== undefined) addSecondCamera = cfg.ADD_SECOND_CAMERA;
+                cams = buildCams(cfg);
+
+                // Init per-camera state
+                const now = Date.now();
+                const newBust = {}, newConnected = {};
+                for (const c of cams) {
+                    newBust[c.key] = now;
+                    newConnected[c.key] = connected[c.key] ?? null;
+                }
+                bust = newBust;
+                connected = newConnected;
             }
         } catch (e) {
             console.warn('Kon stream-config niet laden:', e);
@@ -36,10 +74,11 @@
             const res = await fetch('/api/stream_status');
             if (res.ok) {
                 const s = await res.json();
-                connected = {
-                    cam1: s.cam1 ? s.cam1.connected : false,
-                    cam2: s.cam2 ? s.cam2.connected : false,
-                };
+                const next = {};
+                for (const c of cams) {
+                    next[c.key] = s[c.key] ? s[c.key].connected : false;
+                }
+                connected = next;
                 backendReachable = true;
             }
         } catch (e) {
@@ -50,7 +89,9 @@
     // Herlaad alle streams (bv. nadat de tablet uit slaapstand komt)
     function reloadAll() {
         const now = Date.now();
-        bust = { cam1: now, cam2: now };
+        const next = {};
+        for (const c of cams) next[c.key] = now;
+        bust = next;
     }
 
     // Forceer herverbinden: laat de backend de RTSP opnieuw openen én herlaad de <img>
@@ -129,7 +170,7 @@
                         {cam.label}
                     </span>
 
-                    <img src="/video_feed_{cam.key}?t={bust[cam.key]}" alt={cam.label} />
+                    <img src="{cam.src}?t={bust[cam.key]}" alt={cam.label} />
 
                     {#if connected[cam.key] === false && backendReachable}
                         <button class="reconnect-overlay" on:click={() => reconnectCam(cam.key)}>

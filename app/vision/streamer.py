@@ -54,36 +54,61 @@ def get_persistent_path(relative_path):
     base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.abspath(os.path.join(base_path, "../../", relative_path))
 
-def resolve_source(app_config, cam_key):
-    """Bepaalt de videobron voor een camera.
-    cam_key: 'cam1' | 'cam2' | 'cam_ocr'
+def get_cameras(app_config):
+    """Geeft de lijst met kijk-camera's terug als [{"name", "url"}, ...].
+
+    Ondersteunt zowel het nieuwe CAMERAS-array als de oude
+    RTSP_URL_1/RTSP_URL_2/ADD_SECOND_CAMERA-config (backward compatible),
+    zodat bestaande config.json-bestanden blijven werken.
+    """
+    cams = app_config.get("CAMERAS")
+    if isinstance(cams, list) and cams:
+        return [
+            {"name": c.get("name") or f"Cam {i + 1}", "url": c.get("url", "")}
+            for i, c in enumerate(cams)
+        ]
+
+    # --- Fallback: oude config migreren ---
+    legacy = [{"name": "Bak", "url": app_config.get("RTSP_URL_1", "")}]
+    if app_config.get("ADD_SECOND_CAMERA"):
+        legacy.append({"name": "Overzicht", "url": app_config.get("RTSP_URL_2", "")})
+    return legacy
+
+def cam_key_for_index(index):
+    """Stabiele sleutel per camera: cam1, cam2, cam3, ..."""
+    return f"cam{index + 1}"
+
+def resolve_camera_source(app_config, cam):
+    """Bepaalt de videobron voor één kijk-camera.
     In 'file'-modus gebruiken alle camera's het lokale testbestand.
     """
     if app_config.get("VIDEO_SOURCE_TYPE") == "file":
         return get_bundled_path(app_config.get("VIDEO_SOURCE_FILE", "test/test_video.mp4"))
-    mapping = {
-        "cam1": "RTSP_URL_1",
-        "cam2": "RTSP_URL_2",
-        "cam_ocr": "RTSP_URL_OCR",
-    }
-    return app_config.get(mapping[cam_key], "")
+    return cam.get("url", "")
+
+def resolve_ocr_source(app_config):
+    """Bepaalt de videobron voor de OCR-camera (display-uitlezing)."""
+    if app_config.get("VIDEO_SOURCE_TYPE") == "file":
+        return get_bundled_path(app_config.get("VIDEO_SOURCE_FILE", "test/test_video.mp4"))
+    return app_config.get("RTSP_URL_OCR", "")
 
 # ================= CAMERA PASSTHROUGH STATE =================
-# Laatste frame per passthrough-camera (cam1/cam2). De OCR-camera heeft zijn
-# eigen geannoteerde frame in global_state["current_frame"].
-camera_streams = {
-    "cam1": {"frame": None, "lock": threading.Lock(), "last_ts": 0.0, "reconnect": False},
-    "cam2": {"frame": None, "lock": threading.Lock(), "last_ts": 0.0, "reconnect": False},
-}
+# Laatste frame per passthrough-camera. Wordt dynamisch opgebouwd in
+# start_camera_threads() op basis van de CAMERAS-array uit de config.
+# De OCR-camera heeft zijn eigen geannoteerde frame in
+# global_state["current_frame"] en staat dus niet in deze dict.
+camera_streams = {}
+
+def _make_stream_state():
+    return {"frame": None, "lock": threading.Lock(), "last_ts": 0.0, "reconnect": False}
 
 # ================= WORKERS =================
 
-def camera_passthrough_worker(app_config, cam_key):
+def camera_passthrough_worker(app_config, cam_key, source):
     """Leest een camerastream (RTSP of testbestand) en bewaart steeds het nieuwste frame.
     Pure passthrough zonder YOLO, voor het live meekijken in de browser.
     """
     is_file = app_config.get("VIDEO_SOURCE_TYPE") == "file"
-    source = resolve_source(app_config, cam_key)
     print(f"--- Camera passthrough '{cam_key}' verbindt met: {source} ---")
 
     cap = cv2.VideoCapture(source, cv2.CAP_FFMPEG)
@@ -138,7 +163,7 @@ def ocr_background_worker(app_config):
         ocr_logic.init_model(app_config)
 
     is_file = app_config.get("VIDEO_SOURCE_TYPE") == "file"
-    ocr_source = resolve_source(app_config, "cam_ocr")
+    ocr_source = resolve_ocr_source(app_config)
 
     print(f"Verbinden met OCR videobron: {ocr_source}")
     cap = cv2.VideoCapture(ocr_source, cv2.CAP_FFMPEG)
@@ -234,13 +259,32 @@ def start_ocr_thread(app_config):
     t.start()
 
 def start_camera_threads(app_config):
-    """Start de passthrough-workers voor cam1 (en cam2 indien geactiveerd)."""
-    keys = ["cam1"]
-    if app_config.get("ADD_SECOND_CAMERA") or app_config.get("VIDEO_SOURCE_TYPE") == "file":
-        keys.append("cam2")
+    """Start één passthrough-worker per kijk-camera uit de CAMERAS-array."""
+    cams = get_cameras(app_config)
 
-    for cam_key in keys:
-        t = threading.Thread(target=camera_passthrough_worker, args=(app_config, cam_key))
+    # camera_streams in-place opbouwen (zelfde object blijft gedeeld met routes/api)
+    camera_streams.clear()
+    for i, cam in enumerate(cams):
+        cam_key = cam_key_for_index(i)
+        camera_streams[cam_key] = _make_stream_state()
+
+        source = resolve_camera_source(app_config, cam)
+        t = threading.Thread(
+            target=camera_passthrough_worker,
+            args=(app_config, cam_key, source),
+        )
+        t.daemon = True
+        t.start()
+
+    # OCR-camera ook als kijk-tegel tonen terwijl de OCR-detectie UIT staat?
+    # (Met OCR aan komt het geannoteerde beeld al via /video_feed_ocr.)
+    if app_config.get("SHOW_OCR_IN_CAMERAS") and not app_config.get("OCR_ENABLED", True):
+        camera_streams["cam_ocr"] = _make_stream_state()
+        ocr_source = resolve_ocr_source(app_config)
+        t = threading.Thread(
+            target=camera_passthrough_worker,
+            args=(app_config, "cam_ocr", ocr_source),
+        )
         t.daemon = True
         t.start()
 
@@ -248,11 +292,14 @@ def get_stream_status():
     """Geeft per camera terug of er recent een frame binnenkwam (= verbonden)."""
     now = time.time()
     status = {}
-    for key in ("cam1", "cam2"):
-        ts = camera_streams[key]["last_ts"]
+    for key, stream in camera_streams.items():
+        ts = stream["last_ts"]
         status[key] = {"connected": bool(ts) and (now - ts) < STREAM_FRESH_SECONDS}
-    ocr_ts = global_state.get("last_ts", 0.0)
-    status["cam_ocr"] = {"connected": bool(ocr_ts) and (now - ocr_ts) < STREAM_FRESH_SECONDS}
+    # OCR-detectiecamera: alleen apart rapporteren als hij niet al als
+    # passthrough-tegel draait (anders dubbel/overschreven).
+    if "cam_ocr" not in status:
+        ocr_ts = global_state.get("last_ts", 0.0)
+        status["cam_ocr"] = {"connected": bool(ocr_ts) and (now - ocr_ts) < STREAM_FRESH_SECONDS}
     return status
 
 def request_reconnect(cam_key):

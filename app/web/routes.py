@@ -34,12 +34,8 @@ def video_feed_ocr():
     return Response(generate_ocr_frames(current_app.config),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@main.route('/video_feed_cam1')
-def video_feed_cam1():
-    return Response(generate_camera_frames('cam1'),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
-
-@main.route('/video_feed_cam2')
-def video_feed_cam2():
-    return Response(generate_camera_frames('cam2'),
+@main.route('/video_feed_cam/<cam_key>')
+def video_feed_cam(cam_key):
+    """MJPEG-stream voor een willekeurige kijk-camera (cam1, cam2, cam3, ...)."""
+    return Response(generate_camera_frames(cam_key),
                     mimetype='multipart/x-mixed-replace; boundary=frame')

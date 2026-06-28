@@ -6,9 +6,7 @@
     let saveMessage = '';
     let isError = false;
 
-    // Variabelen om bij te houden of een wachtwoord zichtbaar moet zijn
-    let showPass1 = false;
-    let showPass2 = false;
+    // Wachtwoord-zichtbaarheid voor de OCR-camera
     let showPassOCR = false;
 
     // Lijst met bekende camera merken en hun standaard stream-pad
@@ -21,9 +19,21 @@
         "custom": ""
     };
 
-    let cam1 = { user: 'admin', pass: '', ip: '', brand: 'hikvision', path: '' };
-    let cam2 = { user: 'admin', pass: '', ip: '', brand: 'hikvision', path: '' };
+    // Dynamische lijst kijk-camera's: voeg er zoveel toe als je wilt.
+    let cameras = [];
     let camOCR = { user: 'admin', pass: '', ip: '', brand: 'hikvision', path: '' };
+
+    function newCamera(name) {
+        return { name: name || '', user: 'admin', pass: '', ip: '', brand: 'hikvision', path: '', show: false };
+    }
+
+    function addCamera() {
+        cameras = [...cameras, newCamera(`Camera ${cameras.length + 1}`)];
+    }
+
+    function removeCamera(index) {
+        cameras = cameras.filter((_, i) => i !== index);
+    }
 
     function parseRtspUrl(url, camObj) {
         if (!url || !url.startsWith('rtsp://')) return;
@@ -63,10 +73,32 @@
             const res = await fetch('/api/config');
             if (res.ok) {
                 configData = await res.json();
-                parseRtspUrl(configData.RTSP_URL_1, cam1);
-                parseRtspUrl(configData.RTSP_URL_2, cam2);
+
+                // Kijk-camera's inladen: nieuw CAMERAS-array of oude losse keys.
+                if (Array.isArray(configData.CAMERAS) && configData.CAMERAS.length) {
+                    cameras = configData.CAMERAS.map((c, i) => {
+                        const obj = newCamera(c.name || `Camera ${i + 1}`);
+                        parseRtspUrl(c.url, obj);
+                        return obj;
+                    });
+                } else {
+                    const c1 = newCamera('Bak');
+                    parseRtspUrl(configData.RTSP_URL_1, c1);
+                    cameras = [c1];
+                    if (configData.ADD_SECOND_CAMERA) {
+                        const c2 = newCamera('Overzicht');
+                        parseRtspUrl(configData.RTSP_URL_2, c2);
+                        cameras = [...cameras, c2];
+                    }
+                }
+                if (!cameras.length) cameras = [newCamera('Camera 1')];
+
                 parseRtspUrl(configData.RTSP_URL_OCR, camOCR);
-                cam1 = cam1; cam2 = cam2; camOCR = camOCR;
+                camOCR = camOCR;
+
+                // Defaults voor oudere config-bestanden
+                if (configData.OCR_ENABLED === undefined) configData.OCR_ENABLED = true;
+                if (configData.SHOW_OCR_IN_CAMERAS === undefined) configData.SHOW_OCR_IN_CAMERAS = false;
             }
         } catch (error) {
             console.error("Netwerkfout:", error);
@@ -76,8 +108,15 @@
     });
 
     async function saveConfig() {
-        configData.RTSP_URL_1 = buildRtspUrl(cam1);
-        configData.RTSP_URL_2 = buildRtspUrl(cam2);
+        configData.CAMERAS = cameras.map((c, i) => ({
+            name: c.name || `Camera ${i + 1}`,
+            url: buildRtspUrl(c),
+        }));
+        // Oude losse camera-keys opruimen zodat de array de enige bron is.
+        delete configData.RTSP_URL_1;
+        delete configData.RTSP_URL_2;
+        delete configData.ADD_SECOND_CAMERA;
+
         configData.RTSP_URL_OCR = buildRtspUrl(camOCR);
 
         try {
@@ -118,89 +157,87 @@
         {:else}
             <form on:submit|preventDefault={saveConfig}>
 
-                <div class="cam-block">
-                    <div class="card-header">Camera 1 (Voerweegschaal)</div>
-                    <div class="grid-2-col">
-                        <label class="form-group">
-                            <span>IP Adres</span>
-                            <input type="text" bind:value={cam1.ip} placeholder="192.168..." />
-                        </label>
-                        <label class="form-group">
-                            <span>Cameramerk</span>
-                            <select bind:value={cam1.brand}>
-                                <option value="hikvision">Hikvision / Safire (Sub-stream)</option>
-                                <option value="hikvision_main">Hikvision / Safire (Main-stream)</option>
-                                <option value="dahua">Dahua</option>
-                                <option value="uniview">Uniview</option>
-                                <option value="tapo">TP-Link Tapo</option>
-                                <option value="custom">Overig / Handmatig</option>
-                            </select>
-                        </label>
-                        <label class="form-group">
-                            <span>Gebruikersnaam</span>
-                            <input type="text" bind:value={cam1.user} />
-                        </label>
-                        <label class="form-group">
-                            <span>Wachtwoord</span>
-                            <input
-                                type={showPass1 ? "text" : "password"}
-                                bind:value={cam1.pass}
-                                on:focus={() => showPass1 = true}
-                                on:blur={() => showPass1 = false}
-                                placeholder="***"
-                            />
-                        </label>
-                    </div>
-                    {#if cam1.brand === 'custom'}
-                        <label class="form-group" style="margin-top: 10px;">
-                            <span>Aangepast Stream Pad (bijv. /h264Preview_01_sub)</span>
-                            <input type="text" bind:value={cam1.path} />
-                        </label>
-                    {/if}
+                <div class="cam-section-header">
+                    <span>Kijk-camera's</span>
+                    <button type="button" class="action-btn secondary add-cam-btn" on:click={addCamera}>
+                        ➕ Camera toevoegen
+                    </button>
                 </div>
 
-                <div class="cam-block">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>Camera 2 (Optioneel)</span>
-                        <label class="checkbox-group" style="margin-top: 0;">
-                            <input type="checkbox" bind:checked={configData.ADD_SECOND_CAMERA} />
-                            <span style="margin-bottom: 0;">Activeren</span>
-                        </label>
-                    </div>
-                    {#if configData.ADD_SECOND_CAMERA}
+                {#each cameras as cam, i (i)}
+                    <div class="cam-block">
+                        <div class="card-header cam-block-header">
+                            <input
+                                class="cam-name-input"
+                                type="text"
+                                bind:value={cam.name}
+                                placeholder={`Camera ${i + 1}`}
+                                title="Naam van deze camera"
+                            />
+                            <button
+                                type="button"
+                                class="remove-cam-btn"
+                                title="Camera verwijderen"
+                                disabled={cameras.length <= 1}
+                                on:click={() => removeCamera(i)}
+                            >✕</button>
+                        </div>
                         <div class="grid-2-col">
                             <label class="form-group">
                                 <span>IP Adres</span>
-                                <input type="text" bind:value={cam2.ip} placeholder="192.168..." />
+                                <input type="text" bind:value={cam.ip} placeholder="192.168..." />
                             </label>
                             <label class="form-group">
                                 <span>Cameramerk</span>
-                                <select bind:value={cam2.brand}>
-                                    <option value="hikvision">Hikvision / Safire</option>
+                                <select bind:value={cam.brand}>
+                                    <option value="hikvision">Hikvision / Safire (Sub-stream)</option>
+                                    <option value="hikvision_main">Hikvision / Safire (Main-stream)</option>
                                     <option value="dahua">Dahua</option>
-                                    <option value="custom">Handmatig</option>
+                                    <option value="uniview">Uniview</option>
+                                    <option value="tapo">TP-Link Tapo</option>
+                                    <option value="custom">Overig / Handmatig</option>
                                 </select>
                             </label>
                             <label class="form-group">
                                 <span>Gebruikersnaam</span>
-                                <input type="text" bind:value={cam2.user} />
+                                <input type="text" bind:value={cam.user} />
                             </label>
                             <label class="form-group">
                                 <span>Wachtwoord</span>
                                 <input
-                                    type={showPass2 ? "text" : "password"}
-                                    bind:value={cam2.pass}
-                                    on:focus={() => showPass2 = true}
-                                    on:blur={() => showPass2 = false}
+                                    type={cam.show ? "text" : "password"}
+                                    bind:value={cam.pass}
+                                    on:focus={() => cam.show = true}
+                                    on:blur={() => cam.show = false}
                                     placeholder="***"
                                 />
                             </label>
                         </div>
-                    {/if}
-                </div>
+                        {#if cam.brand === 'custom'}
+                            <label class="form-group" style="margin-top: 10px;">
+                                <span>Aangepast Stream Pad (bijv. /h264Preview_01_sub)</span>
+                                <input type="text" bind:value={cam.path} />
+                            </label>
+                        {/if}
+                    </div>
+                {/each}
 
                 <div class="cam-block">
-                    <div class="card-header">Camera OCR (Display Uitlezing)</div>
+                    <div class="card-header cam-block-header">
+                        <span>Camera OCR (Display Uitlezing)</span>
+                    </div>
+
+                    <div class="ocr-toggles">
+                        <label class="checkbox-group">
+                            <input type="checkbox" bind:checked={configData.OCR_ENABLED} />
+                            <span>Gewicht uitlezen (OCR) inschakelen — uit voor bijv. opraapwagen</span>
+                        </label>
+                        <label class="checkbox-group">
+                            <input type="checkbox" bind:checked={configData.SHOW_OCR_IN_CAMERAS} />
+                            <span>Deze camera ook tonen in de camera-weergave</span>
+                        </label>
+                    </div>
+
                     <div class="grid-2-col">
                         <label class="form-group">
                             <span>IP Adres</span>
@@ -279,6 +316,63 @@
         border: 1px solid #333;
         margin-bottom: 20px;
     }
+
+    .cam-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 10px 0 14px;
+        color: var(--text-main);
+        font-weight: bold;
+        font-size: 1.05rem;
+    }
+    .add-cam-btn {
+        padding: 8px 14px;
+        font-size: 0.9rem;
+    }
+
+    .cam-block-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .cam-name-input {
+        flex: 1;
+        background: #111;
+        border: 1px solid #444;
+        border-radius: 8px;
+        color: var(--text-main);
+        padding: 8px 10px;
+        font-size: 1rem;
+        font-weight: bold;
+        font-family: inherit;
+    }
+    .cam-name-input:focus { outline: none; border-color: var(--accent-green); }
+
+    .remove-cam-btn {
+        flex: 0 0 auto;
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: #2a1414;
+        border: 1px solid #6b2b2b;
+        color: #e74c3c;
+        cursor: pointer;
+        font-size: 1rem;
+        line-height: 1;
+    }
+    .remove-cam-btn:hover:not(:disabled) { background: #3a1a1a; }
+    .remove-cam-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .ocr-toggles {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .ocr-toggles .checkbox-group span { color: var(--text-muted); font-size: 0.9rem; }
 
     .grid-2-col {
         display: grid;
