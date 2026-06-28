@@ -25,9 +25,11 @@ def serve_assets(path):
 @main.route('/<path:path>')
 def serve_root_files(path):
     dist_path = os.path.join(FRONTEND_DIST_DIR, path)
-    if os.path.exists(dist_path):
+    if os.path.isfile(dist_path):
         return send_from_directory(FRONTEND_DIST_DIR, path)
-    return "Bestand niet gevonden", 404
+    # SPA-fallback: onbekende routes (bv. /settings) horen bij de Svelte-app.
+    # Geef index.html terug i.p.v. 404, anders krijg je een wit scherm.
+    return send_from_directory(FRONTEND_DIST_DIR, 'index.html')
 
 @main.route('/video_feed_ocr')
 def video_feed_ocr():

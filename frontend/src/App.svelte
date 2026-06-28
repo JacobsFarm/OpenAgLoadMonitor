@@ -18,6 +18,17 @@
     // 2. Check de huidige URL in de browser
     let currentPath = window.location.pathname;
 
+    // Onbekende routes worden door Flask naar de SPA gestuurd; map de URL naar
+    // de juiste tab zodat bv. /settings direct het instellingen-tabblad toont.
+    const PATH_TO_TAB = {
+        '/settings': 'settings-tab',
+        '/numbers': 'numbers-tab',
+        '/stream': 'stream-tab',
+    };
+    if (currentPath !== '/config' && PATH_TO_TAB[currentPath]) {
+        activeTab = PATH_TO_TAB[currentPath];
+    }
+
     let pollingInterval;
 
     // Start data polling wanneer de app laadt
