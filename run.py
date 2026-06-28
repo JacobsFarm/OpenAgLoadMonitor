@@ -35,7 +35,7 @@ def find_browser():
             return path
     return None
 
-def launch_kiosk(url):
+def launch_kiosk(url, insecure=False):
     """Start de browser schermvullend zonder adresbalk (wagenscherm)."""
     browser = find_browser()
     if not browser:
@@ -44,27 +44,32 @@ def launch_kiosk(url):
 
     # Aparte profielmap voorkomt 'herstel sessie'-popups op het vaste scherm
     profile = os.path.join(os.path.expanduser("~"), ".agloadmonitor-kiosk")
+    args = [
+        browser,
+        f"--app={url}",
+        "--kiosk",
+        "--start-fullscreen",
+        "--noerrdialogs",
+        "--disable-infobars",
+        "--no-first-run",
+        "--disable-session-crashed-bubble",
+        f"--user-data-dir={profile}",
+    ]
+    # Bij ons eigen HTTPS-certificaat op localhost vertrouwt de browser de CA niet;
+    # voor het lokale wagenscherm negeren we die waarschuwing zodat het beeld toont.
+    if insecure:
+        args.append("--ignore-certificate-errors")
     try:
-        subprocess.Popen([
-            browser,
-            f"--app={url}",
-            "--kiosk",
-            "--start-fullscreen",
-            "--noerrdialogs",
-            "--disable-infobars",
-            "--no-first-run",
-            "--disable-session-crashed-bubble",
-            f"--user-data-dir={profile}",
-        ])
+        subprocess.Popen(args)
         return True
     except Exception as e:
         print(f"⚠️ Kon kiosk-browser niet starten: {e}")
         return False
 
-def open_interface(kiosk):
+def open_interface(kiosk, scheme="http", insecure=False):
     """Open de webinterface op het device: kiosk indien gewenst, anders gewone browser."""
-    url = f"http://localhost:{PORT}"
-    if kiosk and launch_kiosk(url):
+    url = f"{scheme}://localhost:{PORT}"
+    if kiosk and launch_kiosk(url, insecure):
         print("🖥️  Kiosk-modus gestart")
         return
     try:
@@ -82,9 +87,24 @@ if __name__ == '__main__':
     kiosk = bool(app.config.get("KIOSK_MODE", False))
     auto_open = bool(app.config.get("AUTO_OPEN_BROWSER", True))
 
+    # HTTPS opzetten indien gewenst (nodig om de app op Android te installeren als PWA)
+    ssl_context = None
+    if app.config.get("USE_HTTPS", False):
+        try:
+            from app.cert import ensure_certificates
+            cert_dir = os.path.join(os.getcwd(), "data", "certs")
+            cert_p, key_p, ca_p = ensure_certificates(cert_dir)
+            ssl_context = (cert_p, key_p)
+            print(f"🔒 HTTPS aan op poort {PORT}. "
+                  f"Installeer de CA op je telefoon via /rootCA.pem en open daarna https://<ip>:{PORT}")
+        except Exception as e:
+            print(f"⚠️ HTTPS kon niet worden opgezet ({e}); de server start op http.")
+
+    scheme = "https" if ssl_context else "http"
+
     # Open de interface kort nadat de server is opgestart
     if auto_open:
-        threading.Timer(2.0, open_interface, args=(kiosk,)).start()
+        threading.Timer(2.0, open_interface, args=(kiosk, scheme, ssl_context is not None)).start()
 
     # Start de Flask server (cameras worden als MJPEG geserveerd, geen go2rtc meer nodig)
-    app.run(host='0.0.0.0', port=PORT, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=PORT, debug=False, threaded=True, ssl_context=ssl_context)

@@ -99,6 +99,7 @@
                 // Defaults voor oudere config-bestanden
                 if (configData.OCR_ENABLED === undefined) configData.OCR_ENABLED = true;
                 if (configData.SHOW_OCR_IN_CAMERAS === undefined) configData.SHOW_OCR_IN_CAMERAS = false;
+                if (configData.USE_HTTPS === undefined) configData.USE_HTTPS = false;
             }
         } catch (error) {
             console.error("Netwerkfout:", error);
@@ -291,6 +292,10 @@
                     <label class="checkbox-group">
                         <input type="checkbox" bind:checked={configData.KIOSK_MODE} />
                         <span>Kiosk-modus (schermvullend, voor het wagenscherm)</span>
+                    </label>
+                    <label class="checkbox-group">
+                        <input type="checkbox" bind:checked={configData.USE_HTTPS} />
+                        <span>HTTPS inschakelen (nodig om de app op Android te installeren als PWA)</span>
                     </label>
                 </div>
 

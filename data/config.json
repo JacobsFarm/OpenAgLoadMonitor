@@ -20,5 +20,6 @@
     "CONFIDENCE_THRESHOLD": 0.5,
     "STREAM_LAYOUT": "horizontal",
     "AUTO_OPEN_BROWSER": true,
-    "KIOSK_MODE": true
+    "KIOSK_MODE": true,
+    "USE_HTTPS": false
 }

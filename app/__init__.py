@@ -17,7 +17,8 @@ DEFAULT_CONFIG = {
     "CONFIDENCE_THRESHOLD": 0.5,
     "STREAM_LAYOUT": "vertical",
     "AUTO_OPEN_BROWSER": True,
-    "KIOSK_MODE": False
+    "KIOSK_MODE": False,
+    "USE_HTTPS": False
 }
 
 def ensure_config(config_path):

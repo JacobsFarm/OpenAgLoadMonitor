@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'        # bv. v0.2.0 -> bouwt én publiceert een release met de .exe
 
 jobs:
   build-windows:
@@ -42,6 +44,7 @@ jobs:
             --add-data "frontend/dist;frontend/dist" `
             --collect-all ultralytics `
             --collect-all flask `
+            --collect-all cryptography `
             --hidden-import flask `
             run.py
 
@@ -86,6 +89,7 @@ jobs:
             --add-data "frontend/dist:frontend/dist" \
             --collect-all ultralytics \
             --collect-all flask \
+            --collect-all cryptography \
             --hidden-import flask \
             run.py
 
@@ -94,3 +98,32 @@ jobs:
         with:
           name: AgLoadMonitor-Linux
           path: dist/AgLoadMonitor
+
+  # Alleen bij een versietag (vX.Y.Z): de gebouwde binaries als downloadbare
+  # release-assets op de GitHub Releases-pagina zetten zodat je ze kunt delen.
+  release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Artifacts ophalen
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Binaries klaarzetten met duidelijke namen
+        run: |
+          mkdir -p release
+          cp "artifacts/AgLoadMonitor-Windows/AgLoadMonitor.exe" "release/AgLoadMonitor-Windows.exe"
+          cp "artifacts/AgLoadMonitor-Linux/AgLoadMonitor" "release/AgLoadMonitor-Linux"
+
+      - name: Release publiceren met de binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/AgLoadMonitor-Windows.exe
+            release/AgLoadMonitor-Linux
+          generate_release_notes: true

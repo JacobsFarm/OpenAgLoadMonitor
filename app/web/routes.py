@@ -22,6 +22,20 @@ def index():
 def serve_assets(path):
     return send_from_directory(os.path.join(FRONTEND_DIST_DIR, 'assets'), path)
 
+@main.route('/rootCA.pem')
+def root_ca():
+    """Download de lokale root-CA om op de telefoon te installeren (voor de PWA).
+    Wordt als .crt aangeboden zodat Android het herkent als te installeren CA."""
+    cert_dir = os.path.join(os.getcwd(), 'data', 'certs')
+    if os.path.isfile(os.path.join(cert_dir, 'rootCA.pem')):
+        return send_from_directory(
+            cert_dir, 'rootCA.pem',
+            mimetype='application/x-x509-ca-cert',
+            as_attachment=True,
+            download_name='AgLoadMonitor-CA.crt',
+        )
+    return "Certificaat nog niet aangemaakt — zet HTTPS aan en herstart de app.", 404
+
 @main.route('/<path:path>')
 def serve_root_files(path):
     dist_path = os.path.join(FRONTEND_DIST_DIR, path)
